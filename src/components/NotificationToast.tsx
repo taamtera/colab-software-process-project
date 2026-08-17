@@ -18,7 +18,7 @@ export const NotificationToast: React.FC<NotificationToastProps> = ({
   if (!contract) return null;
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 max-w-md w-full bg-white dark:bg-slate-900 border border-sky-300 dark:border-sky-800 rounded-2xl p-4 shadow-xl">
+    <div className="fixed bottom-6 right-6 z-50 max-w-md w-full bg-white dark:bg-slate-900 border border-sky-300 dark:border-sky-800 rounded-lg p-4 shadow-xl">
       <div className="flex items-start justify-between gap-3">
         
         <div className="w-10 h-10 rounded-xl bg-sky-50 dark:bg-sky-950 border border-sky-200 dark:border-sky-800 flex items-center justify-center text-sky-600 dark:text-sky-400 shrink-0">

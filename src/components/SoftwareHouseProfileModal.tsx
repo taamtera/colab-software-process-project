@@ -71,7 +71,7 @@ export const SoftwareHouseProfileModal: React.FC<ProfileModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm overflow-y-auto">
-      <div className="relative w-full max-w-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-xl overflow-hidden p-6 md:p-8 my-8 max-h-[90vh] overflow-y-auto">
+      <div className="relative w-full max-w-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl overflow-hidden p-6 md:p-8 my-8 max-h-[90vh] overflow-y-auto">
         
         {/* Close Button */}
         <button
@@ -90,7 +90,7 @@ export const SoftwareHouseProfileModal: React.FC<ProfileModalProps> = ({
           />
           <div>
             <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-              Desktop - data <span className="text-sky-600 dark:text-sky-400 text-lg font-normal">(Software House Profile)</span>
+              Desktop - data <span className="text-slate-500 dark:text-slate-400 text-lg font-normal">(Software House Profile)</span>
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400">
               จัดการข้อมูลศักยภาพบริษัทและคุณสมบัติเพื่อจับคู่กับ TOR สัญญาจ้าง (FR10 - FR12)
@@ -157,9 +157,9 @@ export const SoftwareHouseProfileModal: React.FC<ProfileModalProps> = ({
           </div>
 
           {/* Section: คุณสมบัติ & ศักยภาพบริษัท (property list input matching wireframe 'property') */}
-          <div className="bg-slate-50 dark:bg-slate-950/70 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3">
+          <div className="bg-slate-50 dark:bg-slate-950/70 p-4 rounded-lg border border-slate-200 dark:border-slate-800 space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-xs font-bold text-sky-700 dark:text-sky-400 uppercase tracking-wider flex items-center gap-1.5">
+              <h3 className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
                 <ShieldCheck className="w-4 h-4" />
                 <span>รายการคุณสมบัติบริษัท (property list)</span>
               </h3>
@@ -176,7 +176,7 @@ export const SoftwareHouseProfileModal: React.FC<ProfileModalProps> = ({
                   className="flex items-center justify-between p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-200 shadow-sm"
                 >
                   <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-sky-600 dark:text-sky-400 shrink-0" />
+                    <CheckCircle2 className="w-4 h-4 text-slate-500 dark:text-slate-400 shrink-0" />
                     <span>{prop}</span>
                   </div>
                   <button
@@ -217,7 +217,7 @@ export const SoftwareHouseProfileModal: React.FC<ProfileModalProps> = ({
             </label>
             <div className="flex flex-wrap gap-2 mb-2">
               {profile.technologies.map((tech, idx) => (
-                <span key={idx} className="px-3 py-1 bg-slate-100 dark:bg-slate-800 text-sky-700 dark:text-sky-300 text-xs font-medium rounded-lg border border-slate-200 dark:border-slate-700">
+                <span key={idx} className="px-3 py-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-medium rounded-lg border border-slate-200 dark:border-slate-700">
                   {tech}
                 </span>
               ))}
@@ -242,8 +242,8 @@ export const SoftwareHouseProfileModal: React.FC<ProfileModalProps> = ({
 
           {/* Alert Success */}
           {savedSuccess && (
-            <div className="p-3 bg-sky-50 dark:bg-sky-950 border border-sky-200 dark:border-sky-800 rounded-xl text-xs text-sky-700 dark:text-sky-300 flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-sky-600 dark:text-sky-400 shrink-0" />
+            <div className="p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-600 dark:text-slate-300 flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-slate-500 shrink-0" />
               <span>บันทึกข้อมูลคุณสมบัติเรียบร้อยแล้ว! Vertex AI กำลังคำนวณการจับคู่ TOR ใหม่...</span>
             </div>
           )}

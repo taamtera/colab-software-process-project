@@ -19,21 +19,21 @@ export const FilterBar: React.FC<FilterBarProps> = ({
   resultCount
 }) => {
   return (
-    <div className="theme-card p-5 rounded-2xl border border-slate-200 dark:border-slate-800 mb-8 bg-white dark:bg-slate-900 shadow-sm">
+    <div className="theme-card p-4 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <SlidersHorizontal className="w-4 h-4 text-sky-600 dark:text-sky-400" />
-          <h2 className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider">
+          <SlidersHorizontal className="w-4 h-4 text-slate-400" />
+          <h2 className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">
             ตัวกรองค้นหา TOR (2x2 Filters)
           </h2>
         </div>
         <div className="flex items-center gap-3">
           <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-            พบ <span className="text-sky-600 dark:text-sky-400 font-bold">{resultCount}</span> รายการ
+            พบ <span className="text-slate-700 dark:text-slate-200 font-bold">{resultCount}</span> รายการ
           </span>
           <button
             onClick={onResetFilters}
-            className="text-xs text-slate-500 dark:text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 underline transition-colors"
+            className="text-xs text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 underline transition-colors"
           >
             ล้างตัวกรอง
           </button>
@@ -45,7 +45,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
         
         {/* Dropdown 1: Category Filter */}
         <div className="relative">
-          <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1.5 font-medium">
+          <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1.5 font-medium">
             หมวดหมู่ TOR (Category)
           </label>
           <div className="relative">
@@ -66,7 +66,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
 
         {/* Dropdown 2: Price / Budget Range */}
         <div className="relative">
-          <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1.5 font-medium">
+          <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1.5 font-medium">
             ช่วงงบประมาณ (Price Range)
           </label>
           <div className="relative">
@@ -86,7 +86,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
 
         {/* Dropdown 3: Bangkok District / Location */}
         <div className="relative">
-          <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1.5 font-medium">
+          <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1.5 font-medium">
             เขตพื้นที่ในกรุงเทพฯ (Bangkok District)
           </label>
           <div className="relative">
@@ -105,9 +105,9 @@ export const FilterBar: React.FC<FilterBarProps> = ({
           </div>
         </div>
 
-        {/* Dropdown 4: AI Qualification & Match score */}
+        {/* Dropdown 4: AI Match score */}
         <div className="relative">
-          <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1.5 font-medium">
+          <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1.5 font-medium">
             ระดับ AI Compatibility Match %
           </label>
           <div className="relative">

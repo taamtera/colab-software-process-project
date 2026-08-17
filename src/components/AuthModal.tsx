@@ -63,7 +63,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm">
-      <div className="relative w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-xl overflow-hidden p-6 md:p-8">
+      <div className="relative w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl overflow-hidden p-6 md:p-8">
         
         {/* Close Modal */}
         <button
@@ -75,7 +75,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
         {/* Modal Title matching Desktop - LogIn / Desktop - SignIn */}
         <div className="text-center mb-6">
-          <div className="w-12 h-12 mx-auto mb-3 rounded-2xl bg-sky-50 dark:bg-sky-950 border border-sky-200 dark:border-sky-800 flex items-center justify-center text-sky-600 dark:text-sky-400">
+          <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400">
             <Sparkles className="w-6 h-6" />
           </div>
           <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
@@ -152,7 +152,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 <button
                   type="button"
                   onClick={handleResetPassword}
-                  className="text-[11px] text-sky-600 dark:text-sky-400 hover:underline"
+                  className="text-[11px] text-slate-500 hover:underline"
                 >
                   ลืมรหัสผ่าน? (Reset Password)
                 </button>
@@ -171,8 +171,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           </div>
 
           {resetMessageSent && (
-            <div className="p-3 bg-sky-50 dark:bg-sky-950 border border-sky-200 dark:border-sky-800 rounded-xl text-xs text-sky-700 dark:text-sky-300 flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 shrink-0 text-sky-600 dark:text-sky-400" />
+            <div className="p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-600 dark:text-slate-300 flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 shrink-0 text-slate-500" />
               <span>ลิงก์รีเซ็ตรหัสผ่านถูกส่งไปยังอีเมลของคุณเรียบร้อยแล้ว (FR9)</span>
             </div>
           )}
@@ -193,7 +193,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               <button
                 type="button"
                 onClick={() => setMode('signin')}
-                className="text-sky-600 dark:text-sky-400 font-semibold hover:underline"
+                className="text-slate-600 dark:text-slate-300 font-semibold hover:underline"
               >
                 Sign In (ลงทะเบียน)
               </button>

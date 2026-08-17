@@ -35,7 +35,7 @@ export const TORDetailModal: React.FC<TORDetailModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm overflow-y-auto">
-      <div className="relative w-full max-w-5xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-xl overflow-hidden my-8 flex flex-col max-h-[92vh]">
+      <div className="relative w-full max-w-5xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl overflow-hidden my-8 flex flex-col max-h-[92vh]">
         
         {/* Modal Close Button */}
         <button
@@ -49,7 +49,7 @@ export const TORDetailModal: React.FC<TORDetailModalProps> = ({
         <div className="overflow-y-auto p-6 md:p-8 space-y-6">
           
           {/* Top Section matching Desktop - 2 wireframe layout */}
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 bg-slate-50 dark:bg-slate-950/60 p-6 rounded-2xl border border-slate-200 dark:border-slate-800">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-5 bg-slate-50 dark:bg-slate-950/60 p-5 rounded-lg border border-slate-200 dark:border-slate-800">
             
             {/* Left Image & Download Button */}
             <div className="md:col-span-4 flex flex-col items-center gap-3">
@@ -78,11 +78,11 @@ export const TORDetailModal: React.FC<TORDetailModalProps> = ({
             <div className="md:col-span-8 flex flex-col justify-between">
               <div>
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-sky-50 dark:bg-sky-950 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800">
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
                     {contract.category}
                   </span>
                   <span className="text-xs text-slate-500 dark:text-slate-400">
-                    Status: <span className="text-sky-700 dark:text-sky-400 font-semibold">{contract.status}</span>
+                    Status: <span className="text-slate-700 dark:text-slate-300 font-semibold">{contract.status}</span>
                   </span>
                 </div>
 
@@ -92,7 +92,7 @@ export const TORDetailModal: React.FC<TORDetailModalProps> = ({
                 </h1>
 
                 {/* contract owner name */}
-                <p className="text-sm font-semibold text-sky-700 dark:text-sky-400 flex items-center gap-1.5 mb-3">
+                <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 mb-3">
                   <Building2 className="w-4 h-4 shrink-0" />
                   <span>{contract.contractOwner}</span>
                 </p>
@@ -100,27 +100,27 @@ export const TORDetailModal: React.FC<TORDetailModalProps> = ({
                 {/* Date range: 22 may 2026 - 22 dec 2026 */}
                 <div className="flex flex-wrap items-center gap-4 text-xs text-slate-600 dark:text-slate-300 mb-4 bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-800">
                   <div className="flex items-center gap-1.5">
-                    <Calendar className="w-4 h-4 text-sky-600 dark:text-sky-400" />
+                    <Calendar className="w-4 h-4 text-slate-400" />
                     <span>ระยะเวลาสัญญา: <strong className="text-slate-900 dark:text-white">{contract.startDate} - {contract.endDate}</strong></span>
                   </div>
                   {/* price: 3,000,000 THB */}
                   <div className="ml-auto">
                     <span className="text-slate-500 dark:text-slate-400 mr-1.5">price:</span>
-                    <strong className="text-lg text-sky-700 dark:text-sky-300 font-extrabold">{contract.priceFormatted}</strong>
+                    <strong className="text-lg text-slate-800 dark:text-slate-100 font-extrabold">{contract.priceFormatted}</strong>
                   </div>
                 </div>
 
                 {/* คุณสมบัติ (Requirements Checklist) */}
                 <div>
                   <h3 className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                    <ShieldCheck className="w-4 h-4 text-sky-600 dark:text-sky-400" />
+                    <ShieldCheck className="w-4 h-4 text-slate-400" />
                     <span>คุณสมบัติ (Requirements checklist)</span>
                   </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {contract.properties.map((prop, idx) => (
                       <div key={prop.id || idx} className="flex items-start gap-2 bg-white dark:bg-slate-900/60 p-2 rounded-lg border border-slate-200 dark:border-slate-800 text-xs">
                         {prop.fulfilledBySoftwareHouse ? (
-                          <CheckCircle2 className="w-4 h-4 text-sky-600 dark:text-sky-400 shrink-0 mt-0.5" />
+                          <CheckCircle2 className="w-4 h-4 text-slate-500 dark:text-slate-400 shrink-0 mt-0.5" />
                         ) : (
                           <XCircle className="w-4 h-4 text-slate-400 dark:text-slate-500 shrink-0 mt-0.5" />
                         )}
@@ -144,7 +144,7 @@ export const TORDetailModal: React.FC<TORDetailModalProps> = ({
                 onClick={() => setActiveTab('pdf')}
                 className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
                   activeTab === 'pdf'
-                    ? 'bg-sky-600 text-white shadow-sm'
+                    ? 'bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900 shadow-sm'
                     : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
@@ -156,7 +156,7 @@ export const TORDetailModal: React.FC<TORDetailModalProps> = ({
                 onClick={() => setActiveTab('ai-eval')}
                 className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
                   activeTab === 'ai-eval'
-                    ? 'bg-sky-600 text-white shadow-sm'
+                    ? 'bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900 shadow-sm'
                     : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
@@ -176,10 +176,10 @@ export const TORDetailModal: React.FC<TORDetailModalProps> = ({
             <PDFReader contract={contract} onDownload={() => onDownloadPDF(contract)} />
           ) : (
             /* Vertex AI Evaluation details */
-            <div className="bg-slate-50 dark:bg-slate-950 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-6">
+            <div className="bg-slate-50 dark:bg-slate-950 p-5 rounded-lg border border-slate-200 dark:border-slate-800 space-y-5">
               <div className="flex items-center justify-between bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-sky-100 dark:bg-sky-950 border border-sky-200 dark:border-sky-800 flex items-center justify-center text-sky-600 dark:text-sky-400">
+                  <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400">
                     <Sparkles className="w-5 h-5" />
                   </div>
                   <div>
@@ -189,14 +189,14 @@ export const TORDetailModal: React.FC<TORDetailModalProps> = ({
                 </div>
 
                 <div className="text-right">
-                  <span className="text-2xl font-black text-sky-600 dark:text-sky-400">{contract.aiEvaluation.qualificationMatchScore}%</span>
+                  <span className="text-2xl font-black text-slate-800 dark:text-slate-100">{contract.aiEvaluation.qualificationMatchScore}%</span>
                   <span className="text-[10px] text-slate-500 dark:text-slate-400 block uppercase">Match Confidence</span>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
-                  <h4 className="text-xs font-bold text-sky-700 dark:text-sky-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                  <h4 className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                     <TrendingUp className="w-4 h-4" />
                     <span>Price & Budget Assessment</span>
                   </h4>
@@ -204,12 +204,12 @@ export const TORDetailModal: React.FC<TORDetailModalProps> = ({
                     {contract.aiEvaluation.priceAssessment}
                   </p>
                   <div className="w-full bg-slate-100 dark:bg-slate-950 rounded-full h-2 overflow-hidden border border-slate-200 dark:border-slate-800">
-                    <div className="bg-sky-600 h-full rounded-full" style={{ width: `${contract.aiEvaluation.priceScore}%` }} />
+                    <div className="bg-slate-600 h-full rounded-full" style={{ width: `${contract.aiEvaluation.priceScore}%` }} />
                   </div>
                 </div>
 
                 <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
-                  <h4 className="text-xs font-bold text-sky-700 dark:text-sky-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                  <h4 className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                     <AlertTriangle className="w-4 h-4 text-amber-500" />
                     <span>Risk & Compliance Level</span>
                   </h4>

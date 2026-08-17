@@ -232,11 +232,11 @@ ${contract.properties.map((p, i) => `${i + 1}. ${p.property}`).join('\n')}
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
         
         {/* VIEW 1: DASHBOARD TAB (Desktop - 1) */}
         {activeTab === 'dashboard' && (
-          <div className="space-y-8 animate-fadeIn">
+          <div className="space-y-5 animate-fadeIn">
             
             {/* Banner Section (Dash board) */}
             <DashboardHero
@@ -279,7 +279,7 @@ ${contract.properties.map((p, i) => `${i + 1}. ${p.property}`).join('\n')}
                   ))}
                 </div>
               ) : (
-                <div className="theme-card p-12 text-center rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+                <div className="theme-card p-8 text-center rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
                   <Search className="w-12 h-12 text-slate-400 mx-auto mb-3" />
                   <h3 className="text-lg font-bold text-slate-700 dark:text-slate-300">ไม่พบรายการ TOR ที่ตรงกับตัวกรอง</h3>
                   <p className="text-xs text-slate-500 mt-1 mb-4">ลองปรับลดเงื่อนไข หรือกดล้างตัวกรองเพื่อดูรายการทั้งหมด</p>
@@ -309,7 +309,7 @@ ${contract.properties.map((p, i) => `${i + 1}. ${p.property}`).join('\n')}
               }}
             />
           ) : (
-            <div className="theme-card p-12 text-center rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 my-12 shadow-sm">
+            <div className="theme-card p-10 text-center rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 my-8 shadow-sm">
               <Bot className="w-16 h-16 text-sky-600 dark:text-sky-400 mx-auto mb-4" />
               <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white">เข้าสู่ระบบเพื่อเปิดใช้งาน AI Recommendation</h2>
               <p className="text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto mt-2 mb-6">
@@ -328,7 +328,7 @@ ${contract.properties.map((p, i) => `${i + 1}. ${p.property}`).join('\n')}
         {/* VIEW 3: PROFILE TAB (Desktop - data profile) */}
         {activeTab === 'profile' && (
           currentUser ? (
-            <div className="theme-card p-8 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-6 shadow-sm">
+            <div className="theme-card p-6 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-6 shadow-sm">
               <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800">
                 <div className="flex items-center gap-4">
                   <img src={currentUser.avatar} alt={currentUser.companyName} className="w-16 h-16 rounded-2xl object-cover ring-2 ring-sky-500/50" />
