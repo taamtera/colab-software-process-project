@@ -3,23 +3,51 @@
 import React from 'react';
 import { FilterState } from '@/types';
 import { BANGKOK_DISTRICTS, TOR_CATEGORIES } from '@/data/mockData';
-import { SlidersHorizontal, ChevronDown } from 'lucide-react';
+import { SlidersHorizontal, ChevronDown, Search, RefreshCw } from 'lucide-react';
 
 interface FilterBarProps {
   filters: FilterState;
   setFilters: React.Dispatch<React.SetStateAction<FilterState>>;
   onResetFilters: () => void;
   resultCount: number;
+  onTriggerAICrawl?: () => void;
+  isCrawling?: boolean;
 }
 
 export const FilterBar: React.FC<FilterBarProps> = ({
   filters,
   setFilters,
   onResetFilters,
-  resultCount
+  resultCount,
+  onTriggerAICrawl,
+  isCrawling = false
 }) => {
   return (
     <div className="theme-card p-4 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+      {/* Search Bar at Top */}
+      <div className="mb-5">
+        <div className="relative">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <input
+            type="text"
+            value={filters.searchQuery}
+            onChange={(e) => setFilters(prev => ({ ...prev, searchQuery: e.target.value }))}
+            placeholder="ค้นหาชื่อสัญญา TOR, หน่วยงานผู้ประกาศ, หรือคุณสมบัติ..."
+            className="w-full pl-10 pr-32 py-2.5 theme-input rounded-xl text-sm placeholder-slate-400"
+          />
+          {onTriggerAICrawl && (
+            <button 
+              onClick={onTriggerAICrawl}
+              disabled={isCrawling}
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-sky-600 hover:bg-sky-700 disabled:bg-sky-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isCrawling ? 'animate-spin' : ''}`} />
+              <span>{isCrawling ? 'Crawling...' : 'AI Crawl'}</span>
+            </button>
+          )}
+        </div>
+      </div>
+
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <SlidersHorizontal className="w-4 h-4 text-slate-400" />

@@ -5,27 +5,17 @@ import {
   Cpu, 
   FileCheck, 
   TrendingUp, 
-  Bot, 
-  Search, 
-  RefreshCw
+  Bot
 } from 'lucide-react';
 
 interface DashboardHeroProps {
   totalTORs: number;
   totalBudgetFormatted: string;
-  onSearchChange: (query: string) => void;
-  searchQuery: string;
-  onTriggerAICrawl: () => void;
-  isCrawling: boolean;
 }
 
 export const DashboardHero: React.FC<DashboardHeroProps> = ({
   totalTORs,
-  totalBudgetFormatted,
-  onSearchChange,
-  searchQuery,
-  onTriggerAICrawl,
-  isCrawling
+  totalBudgetFormatted
 }) => {
   return (
     <div className="relative overflow-hidden rounded-xl theme-card p-5 md:p-7 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
@@ -48,26 +38,6 @@ export const DashboardHero: React.FC<DashboardHeroProps> = ({
             ศูนย์รวมและประเมินคุณสมบัติ TOR ภาครัฐในกรุงเทพมหานคร สำหรับ Software House & Freelancers 
             วิเคราะห์ความเหมาะสมด้วยปัญญาประดิษฐ์ Vertex AI อัตโนมัติ
           </p>
-
-          {/* Quick Search Input */}
-          <div className="relative max-w-xl">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => onSearchChange(e.target.value)}
-              placeholder="ค้นหาชื่อสัญญา TOR, หน่วยงานผู้ประกาศ, หรือคุณสมบัติ..."
-              className="w-full pl-10 pr-32 py-2.5 theme-input rounded-xl text-sm placeholder-slate-400"
-            />
-            <button 
-              onClick={onTriggerAICrawl}
-              disabled={isCrawling}
-              className="absolute right-1.5 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${isCrawling ? 'animate-spin' : ''}`} />
-              <span>{isCrawling ? 'Crawling...' : 'AI Crawl BKK'}</span>
-            </button>
-          </div>
         </div>
 
         {/* Live Metrics Cards */}
