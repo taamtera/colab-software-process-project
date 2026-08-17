@@ -35,10 +35,10 @@ export const PDFReader: React.FC<PDFReaderProps> = ({ contract, onDownload }) =>
   };
 
   return (
-    <div className="flex flex-col h-[550px] bg-slate-900 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-lg">
+    <div className="flex flex-col h-[550px] bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-lg">
       
       {/* PDF Toolbar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 bg-slate-100 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300">
+      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300">
         
         {/* Left Toolbar Items */}
         <div className="flex items-center gap-3">
@@ -120,7 +120,7 @@ export const PDFReader: React.FC<PDFReaderProps> = ({ contract, onDownload }) =>
       </div>
 
       {/* PDF Document Viewing Container */}
-      <div className="flex-1 overflow-auto p-6 bg-slate-200 dark:bg-slate-950 flex justify-center">
+      <div className="flex-1 overflow-auto p-6 bg-slate-100 dark:bg-slate-950 flex justify-center">
         <div 
           className="bg-white text-slate-900 shadow-xl rounded-sm p-8 sm:p-12 transition-transform duration-200 origin-top font-serif max-w-3xl w-full border border-slate-300 relative min-h-[700px]"
           style={{ transform: `scale(${zoomLevel / 100})` }}
