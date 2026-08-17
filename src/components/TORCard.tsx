@@ -75,8 +75,8 @@ export const TORCard: React.FC<TORCardProps> = ({ contract, onSelect }) => {
         {/* Price Tag */}
         <div className="flex items-center justify-between pt-3 border-t border-slate-200 dark:border-slate-800">
           <div>
-            <span className="text-[10px] font-medium text-slate-400 block uppercase">Price / Budget</span>
-            <span className="text-lg font-extrabold text-slate-800 dark:text-slate-100">{contract.priceFormatted}</span>
+            <span className="text-[10px] font-medium text-slate-400 block uppercase">Median Price / Budget</span>
+            <span className="text-lg font-extrabold text-slate-800 dark:text-slate-100">{contract.priceFormatted.replaceAll("0","X")}</span>
           </div>
           
           <div className="flex items-center gap-1 text-xs font-semibold text-slate-500 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200 group-hover:translate-x-1 transition-all">

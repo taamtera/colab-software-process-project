@@ -38,7 +38,7 @@ export const NotificationToast: React.FC<NotificationToastProps> = ({
           </h4>
 
           <p className="text-[11px] text-slate-600 dark:text-slate-300 mb-2">
-            วงเงิน: <strong className="text-sky-700 dark:text-sky-300">{contract.priceFormatted}</strong> • เขต{contract.district}
+            วงเงิน: <strong className="text-sky-700 dark:text-sky-300">{contract.priceFormatted.replaceAll("0","X")}</strong> • เขต{contract.district}
           </p>
 
           <button

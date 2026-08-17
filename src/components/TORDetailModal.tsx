@@ -105,8 +105,8 @@ export const TORDetailModal: React.FC<TORDetailModalProps> = ({
                   </div>
                   {/* price: 3,000,000 THB */}
                   <div className="ml-auto">
-                    <span className="text-slate-500 dark:text-slate-400 mr-1.5">price:</span>
-                    <strong className="text-lg text-slate-800 dark:text-slate-100 font-extrabold">{contract.priceFormatted}</strong>
+                    <span className="text-slate-500 dark:text-slate-400 mr-1.5">median price:</span>
+                    <strong className="text-lg text-slate-800 dark:text-slate-100 font-extrabold">{contract.priceFormatted.replaceAll("0","X")}</strong>
                   </div>
                 </div>
 

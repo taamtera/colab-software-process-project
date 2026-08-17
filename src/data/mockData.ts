@@ -29,46 +29,6 @@ export const INITIAL_SOFTWARE_HOUSE: SoftwareHouseProfile = {
 
 export const MOCK_TOR_CONTRACTS: TORContract[] = [
   {
-    id: 'tor-001',
-    title: 'พัฒนาระบบบริหารจัดการข้อมูลการจราจรอัจฉริยะ (Bangkok Smart Traffic AI Portal)',
-    contractOwner: 'สำนักการจราจรและขนส่ง กรุงเทพมหานคร (BMA Traffic Department)',
-    publisherType: 'BMA (กรุงเทพมหานคร)',
-    district: 'Phra Nakhon',
-    price: 3000000,
-    priceFormatted: '3,000,000 THB',
-    startDate: '22 May 2026',
-    endDate: '22 Dec 2026',
-    postingDate: '10 May 2026',
-    submissionDeadline: '30 May 2026',
-    category: 'Smart City',
-    description: 'โครงการจัดหาและพัฒนาซอฟต์แวร์ประมวลผลข้อมูลจราจรเรียลไทม์ เชื่อมต่อกล้อง CCTV และระบบปัญญาประดิษฐ์ตรวจจับความหนาแน่นการจราจรในเขตกรุงเทพชั้นใน',
-    thumbnail: 'https://images.unsplash.com/photo-1508873696983-2df515122519?auto=format&fit=crop&w=600&q=80',
-    pdfUrl: '/mock-tor-001.pdf',
-    pdfPagesCount: 14,
-    status: 'Open for Bidding',
-    matchedScore: 98,
-    properties: [
-      { id: 'p1', property: 'มีผลงานพัฒนา Web Application ด้วย React / Next.js วงเงินไม่ต่ำกว่า 1.5 ล้านบาท', category: 'experience', required: true, fulfilledBySoftwareHouse: true },
-      { id: 'p2', property: 'ได้รับมาตรฐาน ISO 27001 หรือ ISO 29110 สำหรับการบริหารจัดการความปลอดภัยข้อมูล', category: 'certification', required: true, fulfilledBySoftwareHouse: true },
-      { id: 'p3', property: 'รองรับการรับส่งข้อมูล High Concurrency API ไม่ต่ำกว่า 5,000 requests/sec', category: 'technical', required: true, fulfilledBySoftwareHouse: true },
-      { id: 'p4', property: 'มีบุคลากรได้รับวุฒิบัตร Cloud Architect Certified อย่างน้อย 2 ท่าน', category: 'technical', required: false, fulfilledBySoftwareHouse: true }
-    ],
-    aiEvaluation: {
-      priceScore: 92,
-      priceAssessment: 'งบประมาณ 3.0 ล้านบาท สอดคล้องกับขอบเขตงาน (TOR Scope) และอัตราค่าแรงวิศวกรซอฟต์แวร์มาตรฐาน สวทช. 2026',
-      qualificationMatchScore: 98,
-      riskLevel: 'Low',
-      riskAnalysis: 'ข้อกำหนดทางเทคนิคมีความชัดเจน ซอฟต์แวร์เฮาส์มีคุณสมบัติครบถ้วนทุกข้อบังคับ และมีผลงานอ้างอิงตรงสาย',
-      keyRequirementsExtracted: [
-        'ระบบ Web Dashboard แสดงผล Real-Time',
-        'การเชื่อมต่อ RESTful API / WebSocket',
-        'มาตรฐานความปลอดภัยระดับ ISO 27001'
-      ],
-      aiModel: 'Google Vertex AI Gemini 1.5 Pro (TOR Assessor)',
-      evaluatedAt: '2026-05-11 09:30 AM'
-    }
-  },
-  {
     id: 'tor-002',
     title: 'โครงการพัฒนาระบบฐานข้อมูลบริการสุขภาพกรุงเทพฯ (Bangkok Digital Health Record)',
     contractOwner: 'สำนักการแพทย์ กรุงเทพมหานคร',
@@ -86,7 +46,7 @@ export const MOCK_TOR_CONTRACTS: TORContract[] = [
     pdfUrl: '/mock-tor-002.pdf',
     pdfPagesCount: 28,
     status: 'Open for Bidding',
-    matchedScore: 94,
+    matchedScore: 98,
     properties: [
       { id: 'p5', property: 'มีผลงานพัฒนาระบบบริหารจัดการข้อมูลขนาดใหญ่ (Big Data / EHR)', category: 'experience', required: true, fulfilledBySoftwareHouse: true },
       { id: 'p6', property: 'มีมาตรฐาน ISO 27001 ข้อมูลสุขภาพและการคุ้มครองข้อมูลส่วนบุคคล (PDPA)', category: 'certification', required: true, fulfilledBySoftwareHouse: true },
@@ -126,7 +86,7 @@ export const MOCK_TOR_CONTRACTS: TORContract[] = [
     pdfUrl: '/mock-tor-003.pdf',
     pdfPagesCount: 18,
     status: 'Open for Bidding',
-    matchedScore: 89,
+    matchedScore: 68,
     properties: [
       { id: 'p9', property: 'มีประสบการณ์พัฒนาระบบวิเคราะห์ข้อมูลเวล็จริง (Real-Time Analytics)', category: 'experience', required: true, fulfilledBySoftwareHouse: true },
       { id: 'p10', property: 'สามารถจัดทำ Machine Learning Model พยากรณ์อนุกรมเวลา (Time Series)', category: 'technical', required: true, fulfilledBySoftwareHouse: true },
@@ -165,7 +125,7 @@ export const MOCK_TOR_CONTRACTS: TORContract[] = [
     pdfUrl: '/mock-tor-004.pdf',
     pdfPagesCount: 22,
     status: 'Open for Bidding',
-    matchedScore: 96,
+    matchedScore: 70,
     properties: [
       { id: 'p12', property: 'มีผลงานพัฒนาระบบ e-Service หรือ e-Permit ภาคการเมือง/รัฐบาล', category: 'experience', required: true, fulfilledBySoftwareHouse: true },
       { id: 'p13', property: 'รองรับการเชื่อมต่อ Payment Gateway และ e-Tax Invoice/e-Receipt', category: 'technical', required: true, fulfilledBySoftwareHouse: true },
@@ -204,7 +164,7 @@ export const MOCK_TOR_CONTRACTS: TORContract[] = [
     pdfUrl: '/mock-tor-005.pdf',
     pdfPagesCount: 35,
     status: 'Open for Bidding',
-    matchedScore: 82,
+    matchedScore: 59,
     properties: [
       { id: 'p15', property: 'มีผลงานย้ายระบบงานเข้าสู่ Cloud Infrastructure วงเงินไม่น้อยกว่า 5 ล้านบาท', category: 'experience', required: true, fulfilledBySoftwareHouse: true },
       { id: 'p16', property: 'มีบุคลากรระดับ Kubernetes Certified Administrator (CKA)', category: 'technical', required: true, fulfilledBySoftwareHouse: false },

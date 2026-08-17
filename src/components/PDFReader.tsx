@@ -158,8 +158,8 @@ export const PDFReader: React.FC<PDFReaderProps> = ({ contract, onDownload }) =>
                 <table className="w-full text-xs text-left border-collapse border border-slate-300 my-2">
                   <tbody>
                     <tr className="border-b border-slate-300">
-                      <td className="p-2 font-bold bg-slate-100 w-1/3">วงเงินงบประมาณ (Price):</td>
-                      <td className="p-2 font-bold text-sky-800">{contract.priceFormatted}</td>
+                      <td className="p-2 font-bold bg-slate-100 w-1/3">วงเงินงบประมาณ (Median Price):</td>
+                      <td className="p-2 font-bold text-sky-800">{contract.priceFormatted.replaceAll("0","X")}</td>
                     </tr>
                     <tr className="border-b border-slate-300">
                       <td className="p-2 font-bold bg-slate-100">ระยะเวลาสัญญา:</td>
