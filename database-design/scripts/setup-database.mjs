@@ -1,0 +1,486 @@
+import { MongoClient, ServerApiVersion } from 'mongodb';
+import { loadEnvironment } from './env.mjs';
+
+const { uri, databaseName } = loadEnvironment();
+const client = new MongoClient(uri, {
+  serverApi: {
+    version: ServerApiVersion.v1,
+    strict: false,
+    deprecationErrors: true
+  }
+});
+
+const collectionDefinitions = {
+  sources: {
+    required: ['code', 'name', 'baseUrl', 'adapterType', 'enabled', 'rawRetentionDays', 'createdAt', 'updatedAt'],
+    properties: {
+      code: { bsonType: 'string', minLength: 2 },
+      name: { bsonType: 'string', minLength: 2 },
+      baseUrl: { bsonType: 'string', minLength: 8 },
+      adapterType: { bsonType: 'string', minLength: 2 },
+      enabled: { bsonType: 'bool' },
+      rawRetentionDays: { bsonType: ['int', 'long'], minimum: 1, maximum: 365 },
+      crawlSchedule: { bsonType: 'object' },
+      lastSuccessfulRunAt: { bsonType: ['date', 'null'] },
+      createdAt: { bsonType: 'date' },
+      updatedAt: { bsonType: 'date' }
+    }
+  },
+  organizations: {
+    required: ['sourceId', 'nameTh', 'organizationType', 'ancestorIds', 'createdAt', 'updatedAt'],
+    properties: {
+      sourceId: { bsonType: 'objectId' },
+      externalId: { bsonType: ['string', 'null'] },
+      nameTh: { bsonType: 'string', minLength: 2 },
+      nameEn: { bsonType: ['string', 'null'] },
+      organizationType: { enum: ['agency', 'department', 'purchasing_unit'] },
+      parentOrganizationId: { bsonType: ['objectId', 'null'] },
+      ancestorIds: { bsonType: 'array', items: { bsonType: 'objectId' } },
+      createdAt: { bsonType: 'date' },
+      updatedAt: { bsonType: 'date' }
+    }
+  },
+  tor_announcements: {
+    required: ['sourceId', 'dedupKey', 'title', 'organization', 'sourceUrl', 'status', 'version', 'contentHash', 'firstSeenAt', 'lastSeenAt', 'createdAt', 'updatedAt'],
+    properties: {
+      sourceId: { bsonType: 'objectId' },
+      dedupKey: { bsonType: 'string', minLength: 3 },
+      externalId: { bsonType: ['string', 'null'] },
+      title: { bsonType: 'string', minLength: 3 },
+      summary: { bsonType: ['string', 'null'] },
+      category: { bsonType: ['string', 'null'] },
+      keywords: { bsonType: 'array', items: { bsonType: 'string' } },
+      organization: {
+        bsonType: 'object',
+        required: ['organizationId', 'nameTh', 'organizationType', 'ancestorIds'],
+        properties: {
+          organizationId: { bsonType: 'objectId' },
+          externalId: { bsonType: ['string', 'null'] },
+          nameTh: { bsonType: 'string', minLength: 2 },
+          nameEn: { bsonType: ['string', 'null'] },
+          organizationType: { enum: ['agency', 'department', 'purchasing_unit'] },
+          ancestorIds: { bsonType: 'array', items: { bsonType: 'objectId' } },
+          purchasingUnitName: { bsonType: ['string', 'null'] }
+        }
+      },
+      announcementType: { bsonType: 'object' },
+      procurementMethod: { bsonType: 'object' },
+      budget: { bsonType: 'object' },
+      publishedAt: { bsonType: ['date', 'null'] },
+      submissionDeadline: { bsonType: ['date', 'null'] },
+      projectStartAt: { bsonType: ['date', 'null'] },
+      projectEndAt: { bsonType: ['date', 'null'] },
+      sourceUrl: { bsonType: 'string', minLength: 8 },
+      documents: { bsonType: 'array', items: { bsonType: 'object' } },
+      status: { enum: ['draft', 'open', 'closed', 'cancelled', 'awarded'] },
+      version: { bsonType: ['int', 'long'], minimum: 1 },
+      contentHash: { bsonType: 'string', minLength: 8 },
+      lastIngestionRunId: { bsonType: ['objectId', 'null'] },
+      firstSeenAt: { bsonType: 'date' },
+      lastSeenAt: { bsonType: 'date' },
+      createdAt: { bsonType: 'date' },
+      updatedAt: { bsonType: 'date' }
+    }
+  },
+  tor_versions: {
+    required: ['torId', 'version', 'contentHash', 'changeType', 'snapshot', 'capturedAt'],
+    properties: {
+      torId: { bsonType: 'objectId' },
+      version: { bsonType: ['int', 'long'], minimum: 1 },
+      contentHash: { bsonType: 'string', minLength: 8 },
+      changeType: { enum: ['created', 'updated', 'cancelled', 'restored'] },
+      changedFields: { bsonType: 'array', items: { bsonType: 'string' } },
+      snapshot: { bsonType: 'object' },
+      rawItem: { bsonType: ['object', 'string', 'null'] },
+      ingestionRunId: { bsonType: ['objectId', 'null'] },
+      capturedAt: { bsonType: 'date' }
+    }
+  },
+  ingestion_runs: {
+    required: ['sourceId', 'environment', 'triggeredBy', 'status', 'startedAt', 'statistics', 'createdAt'],
+    properties: {
+      sourceId: { bsonType: 'objectId' },
+      environment: { enum: ['development', 'test', 'production'] },
+      triggeredBy: { enum: ['schedule', 'manual', 'test', 'retry'] },
+      status: { enum: ['running', 'completed', 'partial', 'failed'] },
+      startedAt: { bsonType: 'date' },
+      completedAt: { bsonType: ['date', 'null'] },
+      request: { bsonType: 'object' },
+      statistics: { bsonType: 'object' },
+      rawPayload: { bsonType: ['object', 'null'] },
+      error: { bsonType: ['object', 'null'] },
+      createdAt: { bsonType: 'date' }
+    }
+  },
+  raw_ingestion_items: {
+    required: ['ingestionRunId', 'sourceId', 'environment', 'sourceUrl', 'contentHash', 'processingStatus', 'validationErrors', 'expiresAt', 'createdAt', 'updatedAt'],
+    properties: {
+      ingestionRunId: { bsonType: 'objectId' },
+      sourceId: { bsonType: 'objectId' },
+      environment: { enum: ['development', 'test', 'production'] },
+      sourceUrl: { bsonType: 'string', minLength: 8 },
+      externalId: { bsonType: ['string', 'null'] },
+      dedupKey: { bsonType: ['string', 'null'] },
+      contentHash: { bsonType: 'string', minLength: 8 },
+      rawPayload: { bsonType: ['object', 'string', 'null'] },
+      rawPayloadLocation: { bsonType: ['string', 'null'] },
+      processingStatus: { enum: ['pending', 'normalized', 'rejected', 'failed'] },
+      validationErrors: { bsonType: 'array', items: { bsonType: 'object' } },
+      normalizedPreview: { bsonType: ['object', 'null'] },
+      normalizedTorId: { bsonType: ['objectId', 'null'] },
+      expiresAt: { bsonType: 'date' },
+      createdAt: { bsonType: 'date' },
+      updatedAt: { bsonType: 'date' }
+    }
+  },
+  users: {
+    required: ['email', 'emailNormalized', 'passwordHash', 'profile', 'role', 'status', 'failedLoginAttempts', 'passwordChangedAt', 'termsAcceptedAt', 'notificationPreferences', 'createdAt', 'updatedAt'],
+    properties: {
+      email: { bsonType: 'string', pattern: '^.+@.+\\..+$' },
+      emailNormalized: { bsonType: 'string', pattern: '^.+@.+\\..+$' },
+      passwordHash: { bsonType: 'string', minLength: 20 },
+      displayName: { bsonType: ['string', 'null'] },
+      profile: {
+        bsonType: 'object',
+        required: ['firstName', 'lastName'],
+        properties: {
+          firstName: { bsonType: 'string', minLength: 1 },
+          lastName: { bsonType: 'string', minLength: 1 },
+          phone: { bsonType: ['string', 'null'] },
+          avatarUrl: { bsonType: ['string', 'null'] },
+          jobTitle: { bsonType: ['string', 'null'] }
+        }
+      },
+      role: { enum: ['company_admin', 'company_member', 'project_manager', 'system_admin'] },
+      companyId: { bsonType: ['objectId', 'null'] },
+      notificationPreferences: {
+        bsonType: 'object',
+        required: ['channels', 'alertTypes'],
+        properties: {
+          channels: {
+            bsonType: 'array',
+            items: { enum: ['in_app', 'email'] }
+          },
+          alertTypes: {
+            bsonType: 'array',
+            items: { enum: ['new_match', 'tor_updated', 'deadline_reminder'] }
+          },
+          deadlineReminderDays: { bsonType: ['int', 'long'], minimum: 1, maximum: 30 }
+        }
+      },
+      status: { enum: ['pending_verification', 'active', 'suspended', 'disabled'] },
+      registrationSource: { enum: ['self', 'invitation', 'admin'] },
+      emailVerifiedAt: { bsonType: ['date', 'null'] },
+      lastLoginAt: { bsonType: ['date', 'null'] },
+      failedLoginAttempts: { bsonType: ['int', 'long'], minimum: 0 },
+      lockedUntil: { bsonType: ['date', 'null'] },
+      passwordChangedAt: { bsonType: 'date' },
+      termsAcceptedAt: { bsonType: 'date' },
+      deletedAt: { bsonType: ['date', 'null'] },
+      createdAt: { bsonType: 'date' },
+      updatedAt: { bsonType: 'date' }
+    }
+  },
+  auth_tokens: {
+    required: ['type', 'tokenHash', 'emailNormalized', 'expiresAt', 'createdAt'],
+    properties: {
+      type: { enum: ['email_verification', 'password_reset', 'company_invitation'] },
+      tokenHash: { bsonType: 'string', minLength: 32 },
+      userId: { bsonType: ['objectId', 'null'] },
+      companyId: { bsonType: ['objectId', 'null'] },
+      emailNormalized: { bsonType: 'string', pattern: '^.+@.+\\..+$' },
+      expiresAt: { bsonType: 'date' },
+      usedAt: { bsonType: ['date', 'null'] },
+      revokedAt: { bsonType: ['date', 'null'] },
+      createdAt: { bsonType: 'date' }
+    }
+  },
+  sessions: {
+    required: ['userId', 'refreshTokenHash', 'status', 'expiresAt', 'createdAt', 'lastUsedAt'],
+    properties: {
+      userId: { bsonType: 'objectId' },
+      refreshTokenHash: { bsonType: 'string', minLength: 32 },
+      status: { enum: ['active', 'revoked'] },
+      userAgent: { bsonType: ['string', 'null'] },
+      ipAddressHash: { bsonType: ['string', 'null'] },
+      expiresAt: { bsonType: 'date' },
+      lastUsedAt: { bsonType: 'date' },
+      revokedAt: { bsonType: ['date', 'null'] },
+      createdAt: { bsonType: 'date' }
+    }
+  },
+  audit_logs: {
+    required: ['event', 'outcome', 'targetType', 'createdAt'],
+    properties: {
+      actorUserId: { bsonType: ['objectId', 'null'] },
+      event: { bsonType: 'string', minLength: 3 },
+      outcome: { enum: ['success', 'failure'] },
+      targetType: { bsonType: 'string', minLength: 2 },
+      targetId: { bsonType: ['objectId', 'null'] },
+      requestId: { bsonType: ['string', 'null'] },
+      userAgent: { bsonType: ['string', 'null'] },
+      ipAddressHash: { bsonType: ['string', 'null'] },
+      metadata: { bsonType: 'object' },
+      expiresAt: { bsonType: ['date', 'null'] },
+      createdAt: { bsonType: 'date' }
+    }
+  },
+  companies: {
+    required: ['legalName', 'displayName', 'companySize', 'technologies', 'qualifications', 'verificationStatus', 'createdAt', 'updatedAt'],
+    properties: {
+      legalName: { bsonType: 'string', minLength: 2 },
+      displayName: { bsonType: 'string', minLength: 2 },
+      taxId: { bsonType: ['string', 'null'] },
+      companySize: { bsonType: 'string' },
+      district: { bsonType: ['string', 'null'] },
+      contact: { bsonType: 'object' },
+      technologies: { bsonType: 'array', items: { bsonType: 'string' } },
+      qualifications: { bsonType: 'array', items: { bsonType: 'object' } },
+      ownerUserId: { bsonType: ['objectId', 'null'] },
+      memberUserIds: { bsonType: 'array', items: { bsonType: 'objectId' } },
+      profileCompleteness: { bsonType: ['int', 'long', 'double'], minimum: 0, maximum: 100 },
+      verificationStatus: { enum: ['unverified', 'pending', 'verified', 'rejected'] },
+      createdAt: { bsonType: 'date' },
+      updatedAt: { bsonType: 'date' }
+    }
+  },
+  ai_evaluations: {
+    required: ['torId', 'torVersion', 'status', 'retryCount', 'lastAttemptAt', 'nextAttemptAt', 'lastError', 'requirements', 'model', 'createdAt', 'updatedAt'],
+    properties: {
+      torId: { bsonType: 'objectId' },
+      torVersion: { bsonType: ['int', 'long'], minimum: 1 },
+      status: { enum: ['queued', 'processing', 'completed', 'failed'] },
+      retryCount: { bsonType: ['int', 'long'], minimum: 0 },
+      lastAttemptAt: { bsonType: ['date', 'null'] },
+      nextAttemptAt: { bsonType: ['date', 'null'] },
+      lastError: {
+        bsonType: ['object', 'null'],
+        required: ['code', 'message', 'retryable'],
+        properties: {
+          code: { bsonType: 'string', minLength: 2 },
+          message: { bsonType: 'string', minLength: 2 },
+          retryable: { bsonType: 'bool' }
+        }
+      },
+      requirements: { bsonType: 'array', items: { bsonType: 'object' } },
+      budgetObservation: { bsonType: ['object', 'null'] },
+      riskFlags: { bsonType: 'array', items: { bsonType: 'object' } },
+      summary: { bsonType: ['string', 'null'] },
+      model: { bsonType: 'object' },
+      generatedAt: { bsonType: ['date', 'null'] },
+      createdAt: { bsonType: 'date' },
+      updatedAt: { bsonType: 'date' }
+    }
+  },
+  company_matches: {
+    required: ['companyId', 'torId', 'torVersion', 'score', 'recommendation', 'requirementMatches', 'computedAt', 'createdAt', 'updatedAt'],
+    properties: {
+      companyId: { bsonType: 'objectId' },
+      torId: { bsonType: 'objectId' },
+      torVersion: { bsonType: ['int', 'long'], minimum: 1 },
+      score: { bsonType: ['int', 'long', 'double'], minimum: 0, maximum: 100 },
+      recommendation: { enum: ['strong_match', 'possible_match', 'not_recommended'] },
+      requirementMatches: { bsonType: 'array', items: { bsonType: 'object' } },
+      strengths: { bsonType: 'array', items: { bsonType: 'string' } },
+      gaps: { bsonType: 'array', items: { bsonType: 'string' } },
+      explanation: { bsonType: ['string', 'null'] },
+      computedAt: { bsonType: 'date' },
+      createdAt: { bsonType: 'date' },
+      updatedAt: { bsonType: 'date' }
+    }
+  },
+  saved_tors: {
+    required: ['userId', 'torId', 'followUpStatus', 'createdAt', 'updatedAt'],
+    properties: {
+      userId: { bsonType: 'objectId' },
+      torId: { bsonType: 'objectId' },
+      note: { bsonType: ['string', 'null'] },
+      followUpStatus: { enum: ['watching', 'reviewing', 'preparing_bid', 'submitted', 'dismissed'] },
+      createdAt: { bsonType: 'date' },
+      updatedAt: { bsonType: 'date' }
+    }
+  },
+  notifications: {
+    required: ['eventKey', 'userId', 'type', 'channel', 'status', 'attemptCount', 'nextAttemptAt', 'deliveryError', 'title', 'message', 'createdAt'],
+    properties: {
+      eventKey: { bsonType: 'string', minLength: 3 },
+      userId: { bsonType: 'objectId' },
+      companyId: { bsonType: ['objectId', 'null'] },
+      torId: { bsonType: ['objectId', 'null'] },
+      type: { enum: ['new_match', 'tor_updated', 'deadline_reminder', 'system'] },
+      channel: { enum: ['in_app', 'email'] },
+      status: { enum: ['queued', 'sent', 'failed', 'read'] },
+      attemptCount: { bsonType: ['int', 'long'], minimum: 0 },
+      nextAttemptAt: { bsonType: ['date', 'null'] },
+      deliveryError: {
+        bsonType: ['object', 'null'],
+        required: ['code', 'message', 'lastAttemptAt'],
+        properties: {
+          code: { bsonType: 'string', minLength: 2 },
+          message: { bsonType: 'string', minLength: 2 },
+          lastAttemptAt: { bsonType: 'date' }
+        }
+      },
+      title: { bsonType: 'string', minLength: 2 },
+      message: { bsonType: 'string', minLength: 2 },
+      sentAt: { bsonType: ['date', 'null'] },
+      readAt: { bsonType: ['date', 'null'] },
+      createdAt: { bsonType: 'date' }
+    }
+  }
+};
+
+const indexes = {
+  sources: [
+    [{ code: 1 }, { unique: true, name: 'uq_sources_code' }],
+    [{ enabled: 1, lastSuccessfulRunAt: 1 }, { name: 'ix_sources_schedule' }]
+  ],
+  organizations: [
+    [{ sourceId: 1, externalId: 1 }, { unique: true, partialFilterExpression: { externalId: { $type: 'string' } }, name: 'uq_organizations_source_external' }],
+    [{ parentOrganizationId: 1, organizationType: 1 }, { name: 'ix_organizations_parent_type' }],
+    [{ ancestorIds: 1 }, { name: 'ix_organizations_ancestors' }],
+    [{ nameTh: 1 }, { name: 'ix_organizations_name_th' }]
+  ],
+  tor_announcements: [
+    [{ sourceId: 1, dedupKey: 1 }, { unique: true, name: 'uq_tors_source_dedup' }],
+    [{ status: 1, submissionDeadline: 1 }, { name: 'ix_tors_status_deadline' }],
+    [{ category: 1, 'budget.maxAmount': 1 }, { name: 'ix_tors_category_budget' }],
+    [{ 'organization.organizationId': 1, publishedAt: -1 }, { name: 'ix_tors_organization_published' }],
+    [{ 'organization.ancestorIds': 1, publishedAt: -1 }, { name: 'ix_tors_organization_ancestors_published' }],
+    [{ sourceId: 1, lastSeenAt: -1 }, { name: 'ix_tors_source_seen' }],
+    [{ title: 'text', summary: 'text', keywords: 'text', 'organization.nameTh': 'text' }, { default_language: 'none', weights: { title: 10, keywords: 6, 'organization.nameTh': 4, summary: 2 }, name: 'tx_tors_discovery' }]
+  ],
+  tor_versions: [
+    [{ torId: 1, version: 1 }, { unique: true, name: 'uq_tor_versions_number' }],
+    [{ torId: 1, contentHash: 1 }, { unique: true, name: 'uq_tor_versions_content' }],
+    [{ capturedAt: -1 }, { name: 'ix_tor_versions_captured' }]
+  ],
+  ingestion_runs: [
+    [{ sourceId: 1, startedAt: -1 }, { name: 'ix_ingestion_source_started' }],
+    [{ environment: 1, status: 1, startedAt: -1 }, { name: 'ix_ingestion_environment_status' }],
+    [{ triggeredBy: 1, startedAt: -1 }, { name: 'ix_ingestion_triggered_started' }]
+  ],
+  raw_ingestion_items: [
+    [{ ingestionRunId: 1, sourceId: 1, contentHash: 1 }, { unique: true, name: 'uq_raw_run_source_content' }],
+    [{ ingestionRunId: 1, processingStatus: 1 }, { name: 'ix_raw_run_status' }],
+    [{ environment: 1, processingStatus: 1, createdAt: -1 }, { name: 'ix_raw_environment_status' }],
+    [{ expiresAt: 1 }, { expireAfterSeconds: 0, name: 'ttl_raw_ingestion_expiry' }]
+  ],
+  users: [
+    [{ emailNormalized: 1 }, { unique: true, name: 'uq_users_email_normalized' }],
+    [{ companyId: 1, status: 1 }, { name: 'ix_users_company_status' }],
+    [{ status: 1, lockedUntil: 1 }, { name: 'ix_users_status_lock' }]
+  ],
+  auth_tokens: [
+    [{ tokenHash: 1 }, { unique: true, name: 'uq_auth_tokens_hash' }],
+    [{ userId: 1, type: 1, createdAt: -1 }, { name: 'ix_auth_tokens_user_type' }],
+    [{ emailNormalized: 1, type: 1, createdAt: -1 }, { name: 'ix_auth_tokens_email_type' }],
+    [{ expiresAt: 1 }, { expireAfterSeconds: 0, name: 'ttl_auth_tokens_expiry' }]
+  ],
+  sessions: [
+    [{ refreshTokenHash: 1 }, { unique: true, name: 'uq_sessions_refresh_hash' }],
+    [{ userId: 1, status: 1, expiresAt: -1 }, { name: 'ix_sessions_user_status' }],
+    [{ expiresAt: 1 }, { expireAfterSeconds: 0, name: 'ttl_sessions_expiry' }]
+  ],
+  audit_logs: [
+    [{ actorUserId: 1, createdAt: -1 }, { name: 'ix_audit_actor_created' }],
+    [{ event: 1, outcome: 1, createdAt: -1 }, { name: 'ix_audit_event_outcome' }],
+    [{ targetType: 1, targetId: 1, createdAt: -1 }, { name: 'ix_audit_target_created' }],
+    [{ expiresAt: 1 }, { expireAfterSeconds: 0, name: 'ttl_audit_expiry' }]
+  ],
+  companies: [
+    [{ taxId: 1 }, { unique: true, partialFilterExpression: { taxId: { $type: 'string' } }, name: 'uq_companies_tax_id' }],
+    [{ verificationStatus: 1, profileCompleteness: -1 }, { name: 'ix_companies_verification_profile' }],
+    [{ technologies: 1 }, { name: 'ix_companies_technologies' }]
+  ],
+  ai_evaluations: [
+    [{ torId: 1, torVersion: 1 }, { unique: true, name: 'uq_ai_tor_version' }],
+    [{ status: 1, nextAttemptAt: 1, createdAt: 1 }, { name: 'ix_ai_queue_ready' }]
+  ],
+  company_matches: [
+    [{ companyId: 1, torId: 1, torVersion: 1 }, { unique: true, name: 'uq_matches_company_tor_version' }],
+    [{ companyId: 1, score: -1, computedAt: -1 }, { name: 'ix_matches_company_score' }],
+    [{ torId: 1, score: -1 }, { name: 'ix_matches_tor_score' }]
+  ],
+  saved_tors: [
+    [{ userId: 1, torId: 1 }, { unique: true, name: 'uq_saved_user_tor' }],
+    [{ userId: 1, followUpStatus: 1, updatedAt: -1 }, { name: 'ix_saved_user_status' }]
+  ],
+  notifications: [
+    [{ eventKey: 1 }, { unique: true, name: 'uq_notifications_event' }],
+    [{ userId: 1, status: 1, createdAt: -1 }, { name: 'ix_notifications_user_status' }],
+    [{ status: 1, nextAttemptAt: 1, createdAt: 1 }, { name: 'ix_notifications_delivery_queue' }]
+  ]
+};
+
+const obsoleteIndexes = {
+  ingestion_runs: ['ix_ingestion_status_started'],
+  users: ['uq_users_email'],
+  ai_evaluations: ['ix_ai_status_created'],
+  notifications: ['ix_notifications_delivery_queue']
+};
+
+function validatorFor(definition) {
+  return {
+    $jsonSchema: {
+      bsonType: 'object',
+      required: definition.required,
+      properties: definition.properties
+    }
+  };
+}
+
+async function createOrUpdateCollection(database, collectionName, definition) {
+  const exists = await database.listCollections({ name: collectionName }, { nameOnly: true }).hasNext();
+  const validator = validatorFor(definition);
+
+  if (!exists) {
+    await database.createCollection(collectionName, {
+      validator,
+      validationLevel: 'strict',
+      validationAction: 'error'
+    });
+    console.log(`Created collection: ${collectionName}`);
+    return;
+  }
+
+  await database.command({
+    collMod: collectionName,
+    validator,
+    validationLevel: 'strict',
+    validationAction: 'error'
+  });
+  console.log(`Updated validation: ${collectionName}`);
+}
+
+try {
+  await client.connect();
+  const database = client.db(databaseName);
+  await database.command({ ping: 1 });
+
+  for (const [collectionName, definition] of Object.entries(collectionDefinitions)) {
+    await createOrUpdateCollection(database, collectionName, definition);
+  }
+
+  for (const [collectionName, collectionIndexes] of Object.entries(indexes)) {
+    const collection = database.collection(collectionName);
+    const existingIndexNames = new Set((await collection.listIndexes().toArray()).map(({ name }) => name));
+
+    for (const obsoleteIndexName of obsoleteIndexes[collectionName] || []) {
+      if (existingIndexNames.has(obsoleteIndexName)) {
+        await collection.dropIndex(obsoleteIndexName);
+        console.log(`Removed obsolete index: ${collectionName}.${obsoleteIndexName}`);
+      }
+    }
+
+    for (const [keys, options] of collectionIndexes) {
+      await collection.createIndex(keys, options);
+    }
+
+    console.log(`Created indexes: ${collectionName}`);
+  }
+
+  console.log(`Database setup complete: ${databaseName}`);
+} finally {
+  await client.close();
+}
