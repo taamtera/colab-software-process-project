@@ -12,20 +12,9 @@ It covers:
 - AI requirement evaluation and company matching
 - saved TORs, recommendations, and notifications
 - crawler execution history and error tracking
-- isolated raw crawler staging with automatic cleanup
+- isolated raw crawler staging with TTL retention
 
 ## Why MongoDB Atlas
-
-The SRS specifies MongoDB Atlas. Atlas hosts MongoDB in the cloud, so the team does not need to install the MongoDB database server on each laptop. The application only needs a secure Atlas connection string.
-
-## Collections
-
-| Collection | Purpose |
-| --- | --- |
-| `sources` | Public TOR websites and crawler adapter settings |
-| `organizations` | Agencies, departments, and purchasing units |
-| `procurement_projects` | One source procurement project with many announcements |
-| `tor_announcements` | One announcement/publication and its latest searchable state |
 | `tor_versions` | Immutable history when a TOR changes |
 | `ingestion_runs` | Crawler requests, counts, failures, and raw-payload locations |
 | `raw_ingestion_items` | Temporary crawler items, validation errors, and normalization status |
@@ -54,45 +43,20 @@ The concise setup and responsibility contract for teammates is in `docs/team-han
 6. Install the Node.js dependency with `npm install`.
 7. Test access with `npm run db:check`.
 8. Create collections, validation rules, and indexes with `npm run db:setup`.
-9. Add demonstration records with `npm run db:seed`.
+9. Seed non-RSS application data with `npm run db:seed`.
+10. Feed approved RSS data through the ingestion pipeline.
 
-## Safe Crawler Testing
-
-- Use `tor_software_dev` for shared development data.
-- Use `tor_software_test` for crawler and automated tests that may be reset.
-- Reserve `tor_software_prod` for verified live data only.
-- Run `npm run db:cleanup:raw` to remove already-expired staging items from a non-production database.
-- Run `npm run db:cleanup:run -- <runId>` to remove one crawler run and its raw staging items from a non-production database.
-- Run `npm run db:reset:test` to drop, recreate, seed, and verify only `MONGODB_TEST_DB_NAME`.
-
-The reset command refuses any database whose name does not end in `_test`. Cleanup commands also block names that appear to be production databases.
+## Live Ingestion
 
 No local MongoDB database installation is required. Node.js is only used to run these setup scripts and will also be used by the future backend.
 
+The seed command creates only sources, organizations, companies, users, and audit data. It does not write to `procurement_projects`, `ingestion_runs`, `raw_ingestion_items`, `tor_announcements`, `tor_versions`, `rss_query_state`, or any announcement-dependent collections.
+
 ## Security Rules
 
-- Never commit `.env` or paste the Atlas password into source code.
-- Use a separate database user for development and production.
-- Allow only known IP addresses during development.
-- Store password hashes only; never store plain-text passwords.
-- Store only hashes of verification, password-reset, invitation, and refresh tokens.
-- Store PDF files in Google Cloud Storage and keep only their metadata, checksum, and storage URL in MongoDB.
-- Keep original source URLs so users can verify every TOR against the publisher.
 
 ## Main Design Decisions
 
-- `procurement_projects` identifies a project with `sourceId + externalProjectId` and can contain many announcements.
-- `tor_announcements` contains one publication's latest version for fast dashboard, search, and filtering.
-- `tor_versions` preserves previous content without making the dashboard query historical records.
-- `sourceId + announcementKey` prevents the same announcement from being inserted twice.
-- `contentHash` detects a changed TOR and determines whether a new version is required.
-- AI outputs are separated from source data so the original TOR remains auditable.
-- AI and notification workers store retry counters, next-attempt times, and structured errors for reliable queue processing.
-- Match scores are stored separately because one TOR can match many companies.
-- Organization snapshots use bounded fields and ancestor IDs for stable display and agency-wide filtering.
-- Audit retention uses an optional per-record `expiresAt` date instead of a fixed global deletion period.
-- Qualifications and technologies are embedded in `companies` because they are small, bounded profile data.
-- Complete crawler responses are not copied into every TOR. `ingestion_runs` stores a checksum and a cloud-storage location when raw payload retention is needed.
 
 ## Handoff to the Backend Developer
 
@@ -117,3 +81,4 @@ Official references:
 - MongoDB schema validation: https://www.mongodb.com/docs/manual/core/schema-validation/
 - MongoDB unique compound indexes: https://www.mongodb.com/docs/manual/core/index-unique/create-compound/
 - MongoDB Node.js driver: https://www.mongodb.com/docs/drivers/node/current/get-started/
+
