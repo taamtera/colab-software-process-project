@@ -13,10 +13,12 @@ const client = new MongoClient(uri, {
 const requiredCollections = [
   'sources',
   'organizations',
+  'procurement_projects',
   'tor_announcements',
   'tor_versions',
   'ingestion_runs',
   'raw_ingestion_items',
+  'rss_query_state',
   'users',
   'auth_tokens',
   'sessions',
@@ -31,8 +33,10 @@ const requiredCollections = [
 const expectedRequiredFields = {
   sources: ['rawRetentionDays'],
   organizations: ['ancestorIds'],
-  tor_announcements: ['organization'],
+  procurement_projects: ['externalProjectId', 'organizationId'],
+  tor_announcements: ['procurementProjectId', 'announcementKey', 'externalProjectId', 'templateType', 'tempAnnoun', 'tempItemNo', 'seqNo', 'organization'],
   ingestion_runs: ['triggeredBy'],
+  rss_query_state: ['queryKey', 'reportedCount', 'itemsReceived', 'complete', 'splitLevel', 'status', 'retryCount', 'lastCheckedAt'],
   users: ['notificationPreferences'],
   ai_evaluations: ['retryCount', 'lastAttemptAt', 'nextAttemptAt', 'lastError'],
   notifications: ['attemptCount', 'nextAttemptAt', 'deliveryError']
@@ -55,8 +59,11 @@ const expectedNestedRequiredFields = {
 
 const expectedIndexes = {
   organizations: ['ix_organizations_ancestors'],
-  tor_announcements: ['ix_tors_organization_ancestors_published'],
+  procurement_projects: ['uq_projects_source_external'],
+  tor_announcements: ['uq_announcements_source_key', 'ix_tors_organization_ancestors_published'],
   ingestion_runs: ['ix_ingestion_triggered_started'],
+  raw_ingestion_items: ['ttl_raw_ingestion_expiry'],
+  rss_query_state: ['uq_rss_query_source_key', 'ix_rss_query_retry_queue'],
   audit_logs: ['ttl_audit_expiry'],
   ai_evaluations: ['uq_ai_tor_version', 'ix_ai_queue_ready'],
   company_matches: ['uq_matches_company_tor_version'],

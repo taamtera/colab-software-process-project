@@ -146,13 +146,31 @@ try {
     { $set: { ownerUserId: userId, memberUserIds: [userId], updatedAt: now } }
   );
 
-  const torId = await upsertAndGetId(
-    database.collection('tor_announcements'),
-    { sourceId: sourceIds.BMA, dedupKey: 'BMA-DIGITAL-HEALTH-RECORD-2026' },
+  const procurementProjectId = await upsertAndGetId(
+    database.collection('procurement_projects'),
+    { sourceId: sourceIds.BMA, externalProjectId: 'BMA-DHR-2026-001' },
     {
       sourceId: sourceIds.BMA,
-      dedupKey: 'BMA-DIGITAL-HEALTH-RECORD-2026',
-      externalId: 'BMA-DHR-2026-001',
+      externalProjectId: 'BMA-DHR-2026-001',
+      organizationId,
+      title: 'Bangkok Digital Health Record',
+      summary: 'โครงการพัฒนาระบบข้อมูลสุขภาพและการเชื่อมต่อบริการของกรุงเทพมหานคร',
+      metadata: { demoSeed: true }
+    }
+  );
+
+  const torId = await upsertAndGetId(
+    database.collection('tor_announcements'),
+    { sourceId: sourceIds.BMA, announcementKey: 'BMA|BMA-DHR-2026-001|TOR|2026|1|1' },
+    {
+      sourceId: sourceIds.BMA,
+      procurementProjectId,
+      announcementKey: 'BMA|BMA-DHR-2026-001|TOR|2026|1|1',
+      externalProjectId: 'BMA-DHR-2026-001',
+      templateType: 'TOR',
+      tempAnnoun: '2026',
+      tempItemNo: '1',
+      seqNo: '1',
       title: 'โครงการพัฒนาระบบฐานข้อมูลบริการสุขภาพกรุงเทพฯ (Bangkok Digital Health Record)',
       summary: 'โครงการพัฒนาระบบข้อมูลสุขภาพและการเชื่อมต่อบริการของกรุงเทพมหานคร',
       category: 'Web & Mobile',

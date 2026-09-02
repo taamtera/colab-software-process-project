@@ -5,10 +5,12 @@
 ```mermaid
 erDiagram
     SOURCES ||--o{ ORGANIZATIONS : publishes
-    SOURCES ||--o{ TOR_ANNOUNCEMENTS : collects
+    SOURCES ||--o{ PROCUREMENT_PROJECTS : identifies
     SOURCES ||--o{ INGESTION_RUNS : records
+    SOURCES ||--o{ RSS_QUERY_STATE : tracks
     INGESTION_RUNS ||--o{ RAW_INGESTION_ITEMS : contains
-    ORGANIZATIONS ||--o{ TOR_ANNOUNCEMENTS : owns
+    ORGANIZATIONS ||--o{ PROCUREMENT_PROJECTS : owns
+    PROCUREMENT_PROJECTS ||--o{ TOR_ANNOUNCEMENTS : publishes
     TOR_ANNOUNCEMENTS ||--o{ TOR_VERSIONS : preserves
     TOR_ANNOUNCEMENTS ||--o{ AI_EVALUATIONS : analyzed_by
     COMPANIES ||--o{ USERS : includes
@@ -53,15 +55,30 @@ Important fields:
 - `parentOrganizationId`: optional parent reference
 - `ancestorIds`: ordered parent chain used for agency-wide filtering without recursive queries
 
-## 3. `tor_announcements`
+## 3. `procurement_projects`
 
-Stores only the latest normalized state used by the dashboard, search, filters, TOR detail page, and recommendations.
+Represents one procurement project. A project can have many announcements or publications over its lifecycle.
+
+Important fields:
+
+- `sourceId`: source that supplied the project
+- `externalProjectId`: source-specific project identifier, retained as a string
+- `organizationId`: purchasing organization reference
+- `title`, `summary`, and optional project-level metadata
+- `createdAt` and `updatedAt`
+
+The unique project identity is `sourceId + externalProjectId`.
+
+## 4. `tor_announcements`
+
+Stores one announcement or publication, not the whole procurement project. The latest normalized state is used by the dashboard, search, filters, TOR detail page, and recommendations.
 
 Important fields:
 
 - `sourceId`: publishing source
-- `dedupKey`: stable source ID or canonical URL fingerprint
-- `externalId`: original source identifier when available
+- `procurementProjectId`: parent procurement project reference
+- `announcementKey`: deterministic key derived from source announcement identifiers; do not use RSS `guid`
+- `externalProjectId`, `templateType`, `tempAnnoun`, `tempItemNo`, and `seqNo`: source identifiers retained as strings
 - `title`, `summary`, `category`, and `keywords`: searchable data
 - `organization`: bounded display snapshot containing `organizationId`, optional external ID, Thai and English names, organization type, ancestor IDs, and optional purchasing-unit name
 - `announcementType` and `procurementMethod`: source code and display name
@@ -73,9 +90,11 @@ Important fields:
 - `version` and `contentHash`: change tracking
 - `firstSeenAt` and `lastSeenAt`: crawler monitoring
 
+The unique announcement identity is `sourceId + announcementKey`. `projectId` alone is not unique because one project can have many announcements.
+
 Do not store large PDF binary data in this collection. Store files in Google Cloud Storage and retain metadata such as `sourceUrl`, `storageUrl`, `checksum`, `mimeType`, `pageCount`, and `fileSizeBytes`.
 
-## 4. `tor_versions`
+## 5. `tor_versions`
 
 Stores immutable snapshots created only when normalized TOR content changes.
 
@@ -88,7 +107,7 @@ Important fields:
 - `rawItem`: optional raw source item, not the complete repeated feed
 - `capturedAt`
 
-## 5. `ingestion_runs`
+## 6. `ingestion_runs`
 
 Tracks each crawler execution for operations, auditing, and debugging.
 
@@ -103,21 +122,34 @@ Important fields:
 - `rawPayload`: checksum, byte size, and cloud-storage location
 - `error`: safe error code and message
 
-## 6. `raw_ingestion_items`
+## 7. `raw_ingestion_items`
 
 Temporarily isolates untrusted crawler output before it can enter the clean TOR collection.
 
 Important fields:
 
 - `ingestionRunId`, `sourceId`, and `environment`
-- source URL, external ID, deduplication key, and content hash
+- source URL, source identifiers, announcement key, and content hash
 - raw payload or a cloud-storage pointer for large responses
 - `processingStatus`: `pending`, `normalized`, `rejected`, or `failed`
 - validation errors and an optional normalized preview
-- `normalizedTorId` after successful processing
+- `normalizedTorId` after successful processing, referencing `tor_announcements`
 - `expiresAt` for automatic removal, normally 14 days after collection
 
-## 7. `users`
+## 8. `rss_query_state`
+
+Tracks RSS queries and whether all results were retrieved, including split queries and retries.
+
+Important fields:
+
+- `sourceId`, `date`, `departmentId`, `subdepartmentId`, `announcementType`, and `methodId`
+- `queryKey`: deterministic identity for the complete query parameter set
+- `reportedCount`, `itemsReceived`, and `complete`
+- `splitLevel`, `status`, `retryCount`, `nextRetryAt`, `lastCheckedAt`, and `lastIngestionRunId`
+
+The unique query identity is `sourceId + queryKey`.
+
+## 9. `users`
 
 Stores application identity and access data.
 
@@ -133,7 +165,7 @@ Important fields:
 - `status`: `pending_verification`, `active`, `suspended`, or `disabled`
 - email verification, login, password-change, lock, terms-acceptance, and soft-deletion timestamps
 
-## 8. `auth_tokens`
+## 10. `auth_tokens`
 
 Stores short-lived authentication actions without storing usable raw tokens.
 
@@ -146,7 +178,7 @@ Important fields:
 
 The expiry index removes expired records automatically. The raw token belongs only in the email link and must never be saved in MongoDB.
 
-## 9. `sessions`
+## 11. `sessions`
 
 Stores refresh sessions so the backend can support logout, logout from all devices, and revocation after a password change.
 
@@ -157,7 +189,7 @@ Important fields:
 - optional user-agent and hashed IP address
 - `expiresAt`, `lastUsedAt`, `revokedAt`, and `createdAt`
 
-## 10. `audit_logs`
+## 12. `audit_logs`
 
 Records important security and account events.
 
@@ -171,7 +203,7 @@ Recommended events include registration, login success/failure, email verificati
 
 `expiresAt` is optional. When present, the TTL index removes the record at that date. Omit it for security events that must be retained indefinitely or archived under a separate policy.
 
-## 11. `companies`
+## 13. `companies`
 
 Stores the software-house profile used for AI matching.
 
@@ -183,7 +215,7 @@ Important fields:
 - `profileCompleteness`: matching-readiness percentage
 - `verificationStatus`: `unverified`, `pending`, `verified`, or `rejected`
 
-## 12. `ai_evaluations`
+## 14. `ai_evaluations`
 
 Stores AI-derived information separately from official source facts.
 
@@ -200,7 +232,7 @@ Important fields:
 
 Every AI statement should include evidence text or a page reference when possible. The UI must label this information as AI-generated.
 
-## 13. `company_matches`
+## 15. `company_matches`
 
 Stores the evaluated relationship between one company and one TOR version.
 
@@ -213,7 +245,7 @@ Important fields:
 - `strengths`, `gaps`, and `explanation`
 - `computedAt`
 
-## 14. `saved_tors`
+## 16. `saved_tors`
 
 Stores one bookmark per user and TOR.
 
@@ -224,7 +256,7 @@ Important fields:
 - `followUpStatus`: `watching`, `reviewing`, `preparing_bid`, `submitted`, or `dismissed`
 - `createdAt` and `updatedAt`
 
-## 15. `notifications`
+## 17. `notifications`
 
 Tracks in-app and email alerts.
 
@@ -246,7 +278,7 @@ Workers should query queued or failed records using the `status + nextAttemptAt`
 | Product feature | Main collections |
 | --- | --- |
 | Dashboard, search, and filters | `tor_announcements`, `sources`, `organizations` |
-| Five-source crawler | `sources`, `ingestion_runs`, `tor_announcements`, `tor_versions` |
+| Five-source crawler | `sources`, `procurement_projects`, `ingestion_runs`, `tor_announcements`, `tor_versions`, `rss_query_state` |
 | Raw crawler validation and cleanup | `ingestion_runs`, `raw_ingestion_items` |
 | TOR details, PDF reader, source link | `tor_announcements`, `tor_versions` |
 | Company profile and qualifications | `companies`, `users` |

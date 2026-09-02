@@ -24,10 +24,12 @@ The SRS specifies MongoDB Atlas. Atlas hosts MongoDB in the cloud, so the team d
 | --- | --- |
 | `sources` | Public TOR websites and crawler adapter settings |
 | `organizations` | Agencies, departments, and purchasing units |
-| `tor_announcements` | Latest searchable TOR information |
+| `procurement_projects` | One source procurement project with many announcements |
+| `tor_announcements` | One announcement/publication and its latest searchable state |
 | `tor_versions` | Immutable history when a TOR changes |
 | `ingestion_runs` | Crawler requests, counts, failures, and raw-payload locations |
 | `raw_ingestion_items` | Temporary crawler items, validation errors, and normalization status |
+| `rss_query_state` | RSS query completeness, splitting, and retry state |
 | `users` | Login identity, role, company membership, and preferences |
 | `auth_tokens` | Hashed email-verification, password-reset, and invitation tokens |
 | `sessions` | Hashed refresh sessions with expiration and revocation state |
@@ -79,9 +81,10 @@ No local MongoDB database installation is required. Node.js is only used to run 
 
 ## Main Design Decisions
 
-- `tor_announcements` contains the latest version for fast dashboard, search, and filtering.
+- `procurement_projects` identifies a project with `sourceId + externalProjectId` and can contain many announcements.
+- `tor_announcements` contains one publication's latest version for fast dashboard, search, and filtering.
 - `tor_versions` preserves previous content without making the dashboard query historical records.
-- `sourceId + dedupKey` prevents the same source item from being inserted twice.
+- `sourceId + announcementKey` prevents the same announcement from being inserted twice.
 - `contentHash` detects a changed TOR and determines whether a new version is required.
 - AI outputs are separated from source data so the original TOR remains auditable.
 - AI and notification workers store retry counters, next-attempt times, and structured errors for reliable queue processing.
@@ -101,7 +104,7 @@ The backend should use the same collection names and should reuse the unique ind
 2. Save each fetched source item in `raw_ingestion_items` with a 14-day `expiresAt` value.
 3. Validate and normalize the raw item without changing clean TOR data.
 4. Mark invalid staging items as `rejected` or `failed` with validation errors.
-5. Build a stable `dedupKey` from the source's external ID or canonical source URL.
+5. Build a deterministic `announcementKey` from the source announcement identifiers; do not use RSS `guid`.
 6. Compare the new `contentHash` with the current TOR.
 7. Insert a new TOR or update the current TOR and add a `tor_versions` snapshot.
 8. Mark the staging item as `normalized` and retain the resulting TOR ID.

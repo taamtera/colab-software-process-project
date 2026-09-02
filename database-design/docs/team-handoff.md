@@ -3,7 +3,7 @@
 ## What Is Ready
 
 - MongoDB Atlas connection and environment configuration
-- 15 collections with validation rules and indexes
+- 17 collections with validation rules and indexes
 - demonstration records for dashboard and matching development
 - isolated crawler staging and ingestion history
 - cleanup and test-reset safety scripts
@@ -67,7 +67,8 @@ Set `expiresAt` only when the team has approved a retention date. Omit it for re
 - Treat `raw_ingestion_items` as temporary untrusted staging data.
 - Read each source's `rawRetentionDays` value when calculating staging `expiresAt`.
 - Set `triggeredBy` to `schedule`, `manual`, `test`, or `retry` on every ingestion run.
-- Upsert TORs using the unique `sourceId + dedupKey` combination.
+- Upsert projects using `sourceId + externalProjectId`.
+- Upsert announcements using the unique `sourceId + announcementKey` combination. Do not use RSS `guid` or project ID alone.
 - Create a `tor_versions` snapshot only when `contentHash` changes.
 - Keep original source URLs and document checksums for verification.
 - Enable AI evaluation, matching, and notifications only after clean normalization.
@@ -116,7 +117,7 @@ Never share `.env`, `node_modules/`, personal Atlas passwords, raw access tokens
 
 - `npm run handoff:verify` passes.
 - `npm run db:check` connects using the teammate's own credentials.
-- `npm run db:verify` reports all 15 collections and passes.
+- `npm run db:verify` reports all 17 collections and passes.
 - Authentication code uses hashes and the documented status values.
 - AI and notification workers use the documented retry fields and ready-work indexes.
 - Destructive crawler tests use only `tor_software_test`.

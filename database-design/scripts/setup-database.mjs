@@ -40,12 +40,30 @@ const collectionDefinitions = {
       updatedAt: { bsonType: 'date' }
     }
   },
-  tor_announcements: {
-    required: ['sourceId', 'dedupKey', 'title', 'organization', 'sourceUrl', 'status', 'version', 'contentHash', 'firstSeenAt', 'lastSeenAt', 'createdAt', 'updatedAt'],
+  procurement_projects: {
+    required: ['sourceId', 'externalProjectId', 'organizationId', 'createdAt', 'updatedAt'],
     properties: {
       sourceId: { bsonType: 'objectId' },
-      dedupKey: { bsonType: 'string', minLength: 3 },
-      externalId: { bsonType: ['string', 'null'] },
+      externalProjectId: { bsonType: 'string', minLength: 1 },
+      organizationId: { bsonType: 'objectId' },
+      title: { bsonType: ['string', 'null'] },
+      summary: { bsonType: ['string', 'null'] },
+      metadata: { bsonType: 'object' },
+      createdAt: { bsonType: 'date' },
+      updatedAt: { bsonType: 'date' }
+    }
+  },
+  tor_announcements: {
+    required: ['sourceId', 'procurementProjectId', 'announcementKey', 'externalProjectId', 'templateType', 'tempAnnoun', 'tempItemNo', 'seqNo', 'title', 'organization', 'sourceUrl', 'status', 'version', 'contentHash', 'firstSeenAt', 'lastSeenAt', 'createdAt', 'updatedAt'],
+    properties: {
+      sourceId: { bsonType: 'objectId' },
+      procurementProjectId: { bsonType: 'objectId' },
+      announcementKey: { bsonType: 'string', minLength: 3 },
+      externalProjectId: { bsonType: 'string', minLength: 1 },
+      templateType: { bsonType: 'string', minLength: 1 },
+      tempAnnoun: { bsonType: 'string', minLength: 1 },
+      tempItemNo: { bsonType: 'string', minLength: 1 },
+      seqNo: { bsonType: 'string', minLength: 1 },
       title: { bsonType: 'string', minLength: 3 },
       summary: { bsonType: ['string', 'null'] },
       category: { bsonType: ['string', 'null'] },
@@ -119,8 +137,12 @@ const collectionDefinitions = {
       sourceId: { bsonType: 'objectId' },
       environment: { enum: ['development', 'test', 'production'] },
       sourceUrl: { bsonType: 'string', minLength: 8 },
-      externalId: { bsonType: ['string', 'null'] },
-      dedupKey: { bsonType: ['string', 'null'] },
+      externalProjectId: { bsonType: ['string', 'null'] },
+      templateType: { bsonType: ['string', 'null'] },
+      tempAnnoun: { bsonType: ['string', 'null'] },
+      tempItemNo: { bsonType: ['string', 'null'] },
+      seqNo: { bsonType: ['string', 'null'] },
+      announcementKey: { bsonType: ['string', 'null'] },
       contentHash: { bsonType: 'string', minLength: 8 },
       rawPayload: { bsonType: ['object', 'string', 'null'] },
       rawPayloadLocation: { bsonType: ['string', 'null'] },
@@ -129,6 +151,29 @@ const collectionDefinitions = {
       normalizedPreview: { bsonType: ['object', 'null'] },
       normalizedTorId: { bsonType: ['objectId', 'null'] },
       expiresAt: { bsonType: 'date' },
+      createdAt: { bsonType: 'date' },
+      updatedAt: { bsonType: 'date' }
+    }
+  },
+  rss_query_state: {
+    required: ['sourceId', 'date', 'queryKey', 'reportedCount', 'itemsReceived', 'complete', 'splitLevel', 'status', 'retryCount', 'lastCheckedAt', 'createdAt', 'updatedAt'],
+    properties: {
+      sourceId: { bsonType: 'objectId' },
+      date: { bsonType: 'date' },
+      departmentId: { bsonType: ['string', 'null'] },
+      subdepartmentId: { bsonType: ['string', 'null'] },
+      announcementType: { bsonType: ['string', 'null'] },
+      methodId: { bsonType: ['string', 'null'] },
+      queryKey: { bsonType: 'string', minLength: 3 },
+      reportedCount: { bsonType: ['int', 'long'], minimum: 0 },
+      itemsReceived: { bsonType: ['int', 'long'], minimum: 0 },
+      complete: { bsonType: 'bool' },
+      splitLevel: { bsonType: ['int', 'long'], minimum: 0 },
+      status: { enum: ['pending', 'running', 'complete', 'partial', 'failed'] },
+      retryCount: { bsonType: ['int', 'long'], minimum: 0 },
+      nextRetryAt: { bsonType: ['date', 'null'] },
+      lastCheckedAt: { bsonType: 'date' },
+      lastIngestionRunId: { bsonType: ['objectId', 'null'] },
       createdAt: { bsonType: 'date' },
       updatedAt: { bsonType: 'date' }
     }
@@ -341,8 +386,14 @@ const indexes = {
     [{ ancestorIds: 1 }, { name: 'ix_organizations_ancestors' }],
     [{ nameTh: 1 }, { name: 'ix_organizations_name_th' }]
   ],
+  procurement_projects: [
+    [{ sourceId: 1, externalProjectId: 1 }, { unique: true, name: 'uq_projects_source_external' }],
+    [{ organizationId: 1, updatedAt: -1 }, { name: 'ix_projects_organization_updated' }],
+    [{ sourceId: 1, updatedAt: -1 }, { name: 'ix_projects_source_updated' }]
+  ],
   tor_announcements: [
-    [{ sourceId: 1, dedupKey: 1 }, { unique: true, name: 'uq_tors_source_dedup' }],
+    [{ sourceId: 1, announcementKey: 1 }, { unique: true, name: 'uq_announcements_source_key' }],
+    [{ procurementProjectId: 1, publishedAt: -1 }, { name: 'ix_announcements_project_published' }],
     [{ status: 1, submissionDeadline: 1 }, { name: 'ix_tors_status_deadline' }],
     [{ category: 1, 'budget.maxAmount': 1 }, { name: 'ix_tors_category_budget' }],
     [{ 'organization.organizationId': 1, publishedAt: -1 }, { name: 'ix_tors_organization_published' }],
@@ -365,6 +416,12 @@ const indexes = {
     [{ ingestionRunId: 1, processingStatus: 1 }, { name: 'ix_raw_run_status' }],
     [{ environment: 1, processingStatus: 1, createdAt: -1 }, { name: 'ix_raw_environment_status' }],
     [{ expiresAt: 1 }, { expireAfterSeconds: 0, name: 'ttl_raw_ingestion_expiry' }]
+  ],
+  rss_query_state: [
+    [{ sourceId: 1, queryKey: 1 }, { unique: true, name: 'uq_rss_query_source_key' }],
+    [{ sourceId: 1, date: -1, status: 1 }, { name: 'ix_rss_query_source_date_status' }],
+    [{ status: 1, nextRetryAt: 1 }, { name: 'ix_rss_query_retry_queue' }],
+    [{ lastIngestionRunId: 1 }, { name: 'ix_rss_query_ingestion_run' }]
   ],
   users: [
     [{ emailNormalized: 1 }, { unique: true, name: 'uq_users_email_normalized' }],
@@ -417,7 +474,8 @@ const obsoleteIndexes = {
   ingestion_runs: ['ix_ingestion_status_started'],
   users: ['uq_users_email'],
   ai_evaluations: ['ix_ai_status_created'],
-  notifications: ['ix_notifications_delivery_queue']
+  notifications: ['ix_notifications_delivery_queue'],
+  tor_announcements: ['uq_tors_source_dedup']
 };
 
 function validatorFor(definition) {
