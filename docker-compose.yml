@@ -1,0 +1,43 @@
+name: tor-software
+
+services:
+  api:
+    build:
+      context: ./tor-backend
+      dockerfile: Dockerfile
+    env_file:
+      - ./tor-backend/.env
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+    ports:
+      - "4000:4000"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:4000/api/health').then((response)=>{if(!response.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+
+  crawler:
+    build:
+      context: ./tor-crawler
+      dockerfile: Dockerfile
+    env_file:
+      - ./tor-backend/.env
+    environment:
+      NODE_ENV: production
+      CRAWLER_ENVIRONMENT: development
+      CRAWLER_ENABLED: "false"
+      CRAWLER_POLL_INTERVAL_SECONDS: 300
+      CRAWLER_HEALTH_PORT: 4100
+      RAW_RETENTION_DAYS: 14
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:4100/health').then((response)=>{if(!response.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+
