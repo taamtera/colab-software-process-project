@@ -44,13 +44,13 @@ The concise setup and responsibility contract for teammates is in `docs/team-han
 7. Test access with `npm run db:check`.
 8. Create collections, validation rules, and indexes with `npm run db:setup`.
 9. Seed non-RSS application data with `npm run db:seed`.
-10. Feed approved RSS data through the ingestion pipeline.
+10. Feed RSS data through the simplified RSS ingestion schema.
 
 ## Live Ingestion
 
 No local MongoDB database installation is required. Node.js is only used to run these setup scripts and will also be used by the future backend.
 
-The seed command creates only sources, organizations, companies, users, and audit data. It does not write to `procurement_projects`, `ingestion_runs`, `raw_ingestion_items`, `tor_announcements`, `tor_versions`, `rss_query_state`, or any announcement-dependent collections.
+The seed command creates only sources, organizations, companies, users, and audit data. It does not write to RSS crawler collections.
 
 ## Security Rules
 
@@ -62,18 +62,12 @@ The seed command creates only sources, organizations, companies, users, and audi
 
 Before sharing the package, run `npm run handoff:verify`. Share only the files listed in `docs/team-handoff.md`; never include `.env` or `node_modules/`.
 
-The backend should use the same collection names and should reuse the unique indexes for safe upserts. The crawler should follow this sequence:
+The crawler should use the same collection names and should write the current RSS-stage payloads as follows:
 
-1. Start an `ingestion_runs` record.
-2. Save each fetched source item in `raw_ingestion_items` with a 14-day `expiresAt` value.
-3. Validate and normalize the raw item without changing clean TOR data.
-4. Mark invalid staging items as `rejected` or `failed` with validation errors.
-5. Build a deterministic `announcementKey` from the source announcement identifiers; do not use RSS `guid`.
-6. Compare the new `contentHash` with the current TOR.
-7. Insert a new TOR or update the current TOR and add a `tor_versions` snapshot.
-8. Mark the staging item as `normalized` and retain the resulting TOR ID.
-9. Complete the ingestion record with inserted, updated, unchanged, and failed counts.
-10. Queue AI evaluation, company matching, and notifications only for new or changed TORs.
+1. Insert an `ingestion_runs` document with `sourceId`, `fetchedAt`, `request`, `reportedCount`, `itemsReceived`, and `complete`.
+2. Insert each feed item into `tor_announcements` with `sourceId`, `departmentId`, `projectId`, `templateId`, `title`, `description`, `publishedAt`, `url`, `procurementMethod`, `announcementType`, `channelParams`, `itemParams`, `firstSeenAt`, and `lastSeenAt`.
+3. Use the unique `sourceId + url` index to prevent duplicate feed items.
+4. Add validation and normalization stages later before enabling downstream TOR, AI, matching, or notification workflows.
 
 Official references:
 

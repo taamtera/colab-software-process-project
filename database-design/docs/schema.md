@@ -71,9 +71,19 @@ The unique project identity is `sourceId + externalProjectId`.
 
 ## 4. `tor_announcements`
 
+For the current RSS-only crawler stage, this collection stores the simplified feed item before any later normalization into the full TOR model.
+
 Stores one announcement or publication, not the whole procurement project. The latest normalized state is used by the dashboard, search, filters, TOR detail page, and recommendations.
 
-Important fields:
+RSS-stage fields:
+
+- `sourceId`, `departmentId`, `projectId`, and `templateId`
+- `title`, `description`, `publishedAt`, and `url`
+- `procurementMethod` and `announcementType`
+- `channelParams` and `itemParams`
+- `firstSeenAt` and `lastSeenAt`
+
+The later normalized TOR model may add the following fields:
 
 - `sourceId`: publishing source
 - `procurementProjectId`: parent procurement project reference
@@ -109,18 +119,22 @@ Important fields:
 
 ## 6. `ingestion_runs`
 
-Tracks each crawler execution for operations, auditing, and debugging.
+Tracks each RSS fetch for the current crawler stage.
 
-Important fields:
+Required RSS-stage fields:
 
-- `sourceId`, `startedAt`, and `completedAt`
-- `environment`: `development`, `test`, or `production`
-- `triggeredBy`: `schedule`, `manual`, `test`, or `retry`
-- `status`: `running`, `completed`, `partial`, or `failed`
+- `sourceId`: source code such as `EGP`
+- `fetchedAt`: fetch timestamp as an ISO string or MongoDB date
 - `request`: endpoint and non-secret request parameters
-- `statistics`: fetched, inserted, updated, unchanged, and failed counts
-- `rawPayload`: checksum, byte size, and cloud-storage location
-- `error`: safe error code and message
+- `reportedCount` and `itemsReceived`: feed counts
+- `complete`: whether the complete feed was retrieved
+
+Optional fields:
+
+- `channelParams`: RSS channel parameters
+- `lastBuildDate`: source feed timestamp
+
+The full crawler lifecycle fields can be added later when processing, retries, and operational auditing are introduced.
 
 ## 7. `raw_ingestion_items`
 

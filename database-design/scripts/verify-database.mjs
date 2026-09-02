@@ -34,8 +34,8 @@ const expectedRequiredFields = {
   sources: ['rawRetentionDays'],
   organizations: ['ancestorIds'],
   procurement_projects: ['externalProjectId', 'organizationId'],
-  tor_announcements: ['procurementProjectId', 'announcementKey', 'externalProjectId', 'templateType', 'tempAnnoun', 'tempItemNo', 'seqNo', 'organization'],
-  ingestion_runs: ['triggeredBy'],
+  tor_announcements: ['departmentId', 'projectId', 'templateId', 'title', 'description', 'publishedAt', 'url', 'procurementMethod', 'announcementType', 'channelParams', 'itemParams', 'firstSeenAt', 'lastSeenAt'],
+  ingestion_runs: ['sourceId', 'fetchedAt', 'request', 'reportedCount', 'itemsReceived', 'complete'],
   rss_query_state: ['queryKey', 'reportedCount', 'itemsReceived', 'complete', 'splitLevel', 'status', 'retryCount', 'lastCheckedAt'],
   users: ['notificationPreferences'],
   ai_evaluations: ['retryCount', 'lastAttemptAt', 'nextAttemptAt', 'lastError'],
@@ -43,9 +43,7 @@ const expectedRequiredFields = {
 };
 
 const expectedNestedRequiredFields = {
-  tor_announcements: {
-    organization: ['organizationId', 'nameTh', 'organizationType', 'ancestorIds']
-  },
+  tor_announcements: {},
   users: {
     notificationPreferences: ['channels', 'alertTypes']
   },
@@ -60,8 +58,8 @@ const expectedNestedRequiredFields = {
 const expectedIndexes = {
   organizations: ['ix_organizations_ancestors'],
   procurement_projects: ['uq_projects_source_external'],
-  tor_announcements: ['uq_announcements_source_key', 'ix_tors_organization_ancestors_published'],
-  ingestion_runs: ['ix_ingestion_triggered_started'],
+  tor_announcements: ['uq_rss_tors_source_url', 'tx_rss_tors_discovery'],
+  ingestion_runs: ['ix_rss_ingestion_source_fetched'],
   raw_ingestion_items: ['ttl_raw_ingestion_expiry'],
   rss_query_state: ['uq_rss_query_source_key', 'ix_rss_query_retry_queue'],
   audit_logs: ['ttl_audit_expiry'],
