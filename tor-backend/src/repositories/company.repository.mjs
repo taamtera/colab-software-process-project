@@ -5,6 +5,39 @@ function companies() {
   return getDatabase().collection('companies');
 }
 
+export async function createCompany({
+  legalName,
+  displayName = null,
+  taxId = null,
+  companySize = null,
+  district = null,
+  createdByUserId = null
+}) {
+  const now = new Date();
+  const document = {
+    legalName: legalName.trim(),
+    displayName: (displayName || legalName).trim(),
+    taxId: taxId ? taxId.trim() : null,
+    companySize: companySize ?? null,
+    district: district ?? null,
+    verificationStatus: 'unverified',
+    createdByUserId: createdByUserId ? toObjectId(createdByUserId, 'createdByUserId') : null,
+    memberCount: 1,
+    updatedAt: now,
+    createdAt: now
+  };
+
+  const result = await companies().insertOne(document);
+  return { ...document, _id: result.insertedId };
+}
+
+export async function setCompanyCreator(companyId, userId) {
+  return companies().updateOne(
+    { _id: toObjectId(companyId, 'companyId') },
+    { $set: { createdByUserId: toObjectId(userId, 'userId'), updatedAt: new Date() } }
+  );
+}
+
 export async function findCompanyById(companyId) {
   return companies().findOne({ _id: toObjectId(companyId, 'companyId') });
 }

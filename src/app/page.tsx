@@ -6,10 +6,9 @@ import {
   TORContract, 
   FilterState 
 } from '@/types';
-import { 
-  INITIAL_SOFTWARE_HOUSE, 
-  MOCK_TOR_CONTRACTS 
-} from '@/data/mockData';
+import { MOCK_TOR_CONTRACTS } from '@/data/mockData';
+import * as authApi from '@/lib/authApi';
+import { safeUserToProfile } from '@/lib/userProfile';
 import { Header } from '@/components/Header';
 import { DashboardHero } from '@/components/DashboardHero';
 import { FilterBar } from '@/components/FilterBar';
@@ -47,8 +46,25 @@ export default function Home() {
 
   // State Management
   const [activeTab, setActiveTab] = useState<'dashboard' | 'recommendations' | 'profile'>('dashboard');
-  const [currentUser, setCurrentUser] = useState<SoftwareHouseProfile | null>(INITIAL_SOFTWARE_HOUSE);
+  const [currentUser, setCurrentUser] = useState<SoftwareHouseProfile | null>(null);
   const [contracts, setContracts] = useState<TORContract[]>(MOCK_TOR_CONTRACTS);
+
+  // Restore the session on load: if a valid auth cookie exists, the backend returns
+  // the current user; otherwise stay logged out. Runs once on mount.
+  useEffect(() => {
+    let cancelled = false;
+    authApi
+      .me()
+      .then(({ user }) => {
+        if (!cancelled) setCurrentUser(safeUserToProfile(user));
+      })
+      .catch(() => {
+        // Not signed in (or backend unreachable) — remain logged out.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
   const [selectedContract, setSelectedContract] = useState<TORContract | null>(null);
   
   // Auth Modal State
@@ -152,8 +168,15 @@ export default function Home() {
     setAuthModalOpen(true);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    // Clear local state immediately; revoke the session/cookies on the backend.
     setCurrentUser(null);
+    setActiveTab('dashboard');
+    try {
+      await authApi.logout();
+    } catch {
+      // Even if the network call fails, the user is logged out locally.
+    }
   };
 
   const handleResetFilters = () => {

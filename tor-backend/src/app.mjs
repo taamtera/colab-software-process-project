@@ -4,11 +4,15 @@ import helmet from 'helmet';
 import { env } from './config/env.mjs';
 import { errorHandler, notFoundHandler } from './middleware/error-handler.mjs';
 import { requestContext } from './middleware/request-context.mjs';
+import { authRouter } from './routes/auth.routes.mjs';
 import { healthRouter } from './routes/health.routes.mjs';
 
 export const app = express();
 
 app.disable('x-powered-by');
+// Behind Google Cloud's load balancer, trust the proxy so request.ip is the real
+// client address (used only as a hashed value in audit logs).
+app.set('trust proxy', env.nodeEnv === 'production' ? 1 : false);
 app.use(helmet());
 app.use(cors({
   origin(origin, callback) {
@@ -36,6 +40,7 @@ app.get('/api', (request, response) => {
 });
 
 app.use('/api/health', healthRouter);
+app.use('/api/auth', authRouter);
 app.use(notFoundHandler);
 app.use(errorHandler);
 

@@ -22,6 +22,11 @@ function parsePort(value) {
   return port;
 }
 
+function parseIntEnv(value, fallback) {
+  const parsed = Number.parseInt(value ?? '', 10);
+  return Number.isInteger(parsed) && parsed >= 0 ? parsed : fallback;
+}
+
 export const env = Object.freeze({
   nodeEnv: process.env.NODE_ENV?.trim() || 'development',
   port: parsePort(process.env.PORT?.trim() || '4000'),
@@ -31,4 +36,23 @@ export const env = Object.freeze({
     .filter(Boolean),
   mongodbUri: required('MONGODB_URI'),
   mongodbDatabaseName: process.env.MONGODB_DB_NAME?.trim() || 'tor_software'
+});
+
+const accessSecret = process.env.AUTH_ACCESS_SECRET?.trim();
+
+if (env.nodeEnv === 'production' && (!accessSecret || accessSecret.length < 32)) {
+  throw new Error('AUTH_ACCESS_SECRET must be set to at least 32 characters in production.');
+}
+
+// Authentication configuration. Secrets and lifetimes for access/refresh tokens,
+// one-time email tokens, and the login lockout policy. See docs/authentication-contract.md.
+export const authConfig = Object.freeze({
+  accessSecret: accessSecret || 'dev-insecure-access-secret-change-me-please-0123456789',
+  accessTtlSeconds: parseIntEnv(process.env.AUTH_ACCESS_TTL_SECONDS, 15 * 60),
+  refreshTtlDays: parseIntEnv(process.env.AUTH_REFRESH_TTL_DAYS, 7),
+  cookieSecure: env.nodeEnv === 'production',
+  loginMaxAttempts: parseIntEnv(process.env.LOGIN_MAX_ATTEMPTS, 5),
+  loginLockMinutes: parseIntEnv(process.env.LOGIN_LOCK_MINUTES, 15),
+  passwordResetTtlMinutes: parseIntEnv(process.env.AUTH_PASSWORD_RESET_TTL_MINUTES, 30),
+  appBaseUrl: env.frontendOrigins[0] || 'http://localhost:3000'
 });
