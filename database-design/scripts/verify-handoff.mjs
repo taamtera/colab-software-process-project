@@ -14,9 +14,6 @@ const requiredFiles = [
   'scripts/check-connection.mjs',
   'scripts/setup-database.mjs',
   'scripts/verify-database.mjs',
-  'scripts/cleanup-raw.mjs',
-  'scripts/cleanup-run.mjs',
-  'scripts/reset-test-database.mjs'
 ];
 
 const errors = [];
@@ -40,7 +37,7 @@ for (const ignoredPath of ['.env', 'node_modules/']) {
 }
 
 const environmentExample = await readFile(path.join(rootDirectory, '.env.example'), 'utf8');
-const requiredEnvironmentNames = ['MONGODB_URI', 'MONGODB_DB_NAME', 'MONGODB_TEST_DB_NAME'];
+const requiredEnvironmentNames = ['MONGODB_URI', 'MONGODB_DB_NAME'];
 
 for (const environmentName of requiredEnvironmentNames) {
   if (!new RegExp(`^${environmentName}=`, 'mu').test(environmentExample)) {

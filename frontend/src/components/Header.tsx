@@ -13,8 +13,8 @@ import {
 import { SoftwareHouseProfile } from '@/types';
 
 interface HeaderProps {
-  activeTab: 'dashboard' | 'recommendations' | 'profile';
-  setActiveTab: (tab: 'dashboard' | 'recommendations' | 'profile') => void;
+  activeTab: 'dashboard' | 'find' | 'recommendations' | 'profile';
+  setActiveTab: (tab: 'dashboard' | 'find' | 'recommendations' | 'profile') => void;
   currentUser: SoftwareHouseProfile | null;
   onOpenAuth: (mode: 'login' | 'signin') => void;
   onLogout: () => void;
@@ -98,6 +98,18 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
 
           <button
+            onClick={() => setActiveTab('find')}
+            className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
+              activeTab === 'find'
+                ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm border border-slate-200 dark:border-slate-700'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+            }`}
+          >
+            <Sparkles className="w-4 h-4" />
+            <span>Find TORs</span>
+          </button>
+
+          <button
             onClick={() => setActiveTab('recommendations')}
             className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all relative ${
               activeTab === 'recommendations'
@@ -105,7 +117,7 @@ export const Header: React.FC<HeaderProps> = ({
                 : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
             }`}
           >
-            <Sparkles className="w-4 h-4" />
+            <Layers className="w-4 h-4" />
             <span>Recommendation</span>
             {notificationCount > 0 && (
               <span className="ml-1 px-1.5 py-0.2 text-[10px] font-bold bg-slate-700 dark:bg-slate-200 text-white dark:text-slate-800 rounded-full">

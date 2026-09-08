@@ -130,10 +130,10 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
             </div>
             <div>
               <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-                Recommendation <span className="text-xs text-slate-400 dark:text-slate-500 font-medium font-mono">(Vertex AI Matched TOR Contracts)</span>
+                Watch List
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                สัญญาจ้าง TOR ที่ตรงกับคุณสมบัติบริษัทของคุณมากที่สุด จัดอันดับด้วย Vertex AI (FR16 / US7)
+                สัญญาจ้าง TOR ที่คุณชอบ
               </p>
             </div>
           </div>

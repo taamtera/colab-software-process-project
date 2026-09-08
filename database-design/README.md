@@ -12,22 +12,13 @@ It covers:
 - AI requirement evaluation and company matching
 - saved TORs, recommendations, and notifications
 - crawler execution history and error tracking
-- isolated raw crawler staging with automatic cleanup
+- isolated raw crawler staging with TTL retention
 
 ## Why MongoDB Atlas
-
-The SRS specifies MongoDB Atlas. Atlas hosts MongoDB in the cloud, so the team does not need to install the MongoDB database server on each laptop. The application only needs a secure Atlas connection string.
-
-## Collections
-
-| Collection | Purpose |
-| --- | --- |
-| `sources` | Public TOR websites and crawler adapter settings |
-| `organizations` | Agencies, departments, and purchasing units |
-| `tor_announcements` | Latest searchable TOR information |
 | `tor_versions` | Immutable history when a TOR changes |
 | `ingestion_runs` | Crawler requests, counts, failures, and raw-payload locations |
 | `raw_ingestion_items` | Temporary crawler items, validation errors, and normalization status |
+| `rss_query_state` | RSS query completeness, splitting, and retry state |
 | `users` | Login identity, role, company membership, and preferences |
 | `auth_tokens` | Hashed email-verification, password-reset, and invitation tokens |
 | `sessions` | Hashed refresh sessions with expiration and revocation state |
@@ -52,61 +43,31 @@ The concise setup and responsibility contract for teammates is in `docs/team-han
 6. Install the Node.js dependency with `npm install`.
 7. Test access with `npm run db:check`.
 8. Create collections, validation rules, and indexes with `npm run db:setup`.
-9. Add demonstration records with `npm run db:seed`.
+9. Seed non-RSS application data with `npm run db:seed`.
+10. Feed RSS data through the simplified RSS ingestion schema.
 
-## Safe Crawler Testing
-
-- Use `tor_software_dev` for shared development data.
-- Use `tor_software_test` for crawler and automated tests that may be reset.
-- Reserve `tor_software_prod` for verified live data only.
-- Run `npm run db:cleanup:raw` to remove already-expired staging items from a non-production database.
-- Run `npm run db:cleanup:run -- <runId>` to remove one crawler run and its raw staging items from a non-production database.
-- Run `npm run db:reset:test` to drop, recreate, seed, and verify only `MONGODB_TEST_DB_NAME`.
-
-The reset command refuses any database whose name does not end in `_test`. Cleanup commands also block names that appear to be production databases.
+## Live Ingestion
 
 No local MongoDB database installation is required. Node.js is only used to run these setup scripts and will also be used by the future backend.
 
+The seed command creates only sources, organizations, companies, users, and audit data. It does not write to RSS crawler collections.
+
 ## Security Rules
 
-- Never commit `.env` or paste the Atlas password into source code.
-- Use a separate database user for development and production.
-- Allow only known IP addresses during development.
-- Store password hashes only; never store plain-text passwords.
-- Store only hashes of verification, password-reset, invitation, and refresh tokens.
-- Store PDF files in Google Cloud Storage and keep only their metadata, checksum, and storage URL in MongoDB.
-- Keep original source URLs so users can verify every TOR against the publisher.
 
 ## Main Design Decisions
 
-- `tor_announcements` contains the latest version for fast dashboard, search, and filtering.
-- `tor_versions` preserves previous content without making the dashboard query historical records.
-- `sourceId + dedupKey` prevents the same source item from being inserted twice.
-- `contentHash` detects a changed TOR and determines whether a new version is required.
-- AI outputs are separated from source data so the original TOR remains auditable.
-- AI and notification workers store retry counters, next-attempt times, and structured errors for reliable queue processing.
-- Match scores are stored separately because one TOR can match many companies.
-- Organization snapshots use bounded fields and ancestor IDs for stable display and agency-wide filtering.
-- Audit retention uses an optional per-record `expiresAt` date instead of a fixed global deletion period.
-- Qualifications and technologies are embedded in `companies` because they are small, bounded profile data.
-- Complete crawler responses are not copied into every TOR. `ingestion_runs` stores a checksum and a cloud-storage location when raw payload retention is needed.
 
 ## Handoff to the Backend Developer
 
 Before sharing the package, run `npm run handoff:verify`. Share only the files listed in `docs/team-handoff.md`; never include `.env` or `node_modules/`.
 
-The backend should use the same collection names and should reuse the unique indexes for safe upserts. The crawler should follow this sequence:
+The crawler should use the same collection names and should write the current RSS-stage payloads as follows:
 
-1. Start an `ingestion_runs` record.
-2. Save each fetched source item in `raw_ingestion_items` with a 14-day `expiresAt` value.
-3. Validate and normalize the raw item without changing clean TOR data.
-4. Mark invalid staging items as `rejected` or `failed` with validation errors.
-5. Build a stable `dedupKey` from the source's external ID or canonical source URL.
-6. Compare the new `contentHash` with the current TOR.
-7. Insert a new TOR or update the current TOR and add a `tor_versions` snapshot.
-8. Mark the staging item as `normalized` and retain the resulting TOR ID.
-9. Complete the ingestion record with inserted, updated, unchanged, and failed counts.
-10. Queue AI evaluation, company matching, and notifications only for new or changed TORs.
+1. Insert an `ingestion_runs` document with `sourceId`, `fetchedAt`, `request`, `reportedCount`, `itemsReceived`, and `complete`.
+2. Insert each feed item into `tor_announcements` with `sourceId`, `departmentId`, `projectId`, `templateId`, `title`, `description`, `publishedAt`, `url`, `procurementMethod`, `announcementType`, `channelParams`, `itemParams`, `firstSeenAt`, and `lastSeenAt`.
+3. Use the unique `sourceId + url` index to prevent duplicate feed items.
+4. Add validation and normalization stages later before enabling downstream TOR, AI, matching, or notification workflows.
 
 Official references:
 
@@ -114,3 +75,4 @@ Official references:
 - MongoDB schema validation: https://www.mongodb.com/docs/manual/core/schema-validation/
 - MongoDB unique compound indexes: https://www.mongodb.com/docs/manual/core/index-unique/create-compound/
 - MongoDB Node.js driver: https://www.mongodb.com/docs/drivers/node/current/get-started/
+

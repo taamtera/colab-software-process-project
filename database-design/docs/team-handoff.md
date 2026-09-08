@@ -1,12 +1,15 @@
 # TOR Software Database — Team Handoff
 
+Author: taam
+
 ## What Is Ready
 
 - MongoDB Atlas connection and environment configuration
-- 15 collections with validation rules and indexes
-- demonstration records for dashboard and matching development
+- 17 collections with validation rules and indexes
+- schema and indexes ready for live ingestion
+- optional non-RSS demo seed data
 - isolated crawler staging and ingestion history
-- cleanup and test-reset safety scripts
+- automatic TTL retention for raw staging records
 - repositories in the Express backend for database access
 - Docker services for the backend and crawler
 
@@ -23,12 +26,13 @@ The backend/authentication developer owns HTTP routes, password hashing, token g
 3. Copy `.env.example` to `.env`.
 4. Ask the database owner to create or approve a separate Atlas database user. Do not reuse another person's password.
 5. Put that user's Atlas URI in `MONGODB_URI` inside `.env`.
-6. Keep `MONGODB_DB_NAME=tor_software` for the shared class/demo database.
-7. Keep `MONGODB_TEST_DB_NAME=tor_software_test` for disposable tests.
-8. Run `npm run db:check`.
-9. Run `npm run db:verify`.
+6. Keep `MONGODB_DB_NAME` set to the approved database.
+7. Run `npm run db:check`.
+8. Run `npm run db:setup`.
+9. Run `npm run db:seed` for non-RSS application sample data only.
+10. Run `npm run db:verify`.
 
-Do not run `db:setup` against a database unless the team intends to create or update its validators and indexes. Do not run `db:reset:test` against data that must be retained.
+Do not run `db:setup` against a database unless the team intends to create or update its validators and indexes.
 
 ## Authentication Contract
 
@@ -67,7 +71,8 @@ Set `expiresAt` only when the team has approved a retention date. Omit it for re
 - Treat `raw_ingestion_items` as temporary untrusted staging data.
 - Read each source's `rawRetentionDays` value when calculating staging `expiresAt`.
 - Set `triggeredBy` to `schedule`, `manual`, `test`, or `retry` on every ingestion run.
-- Upsert TORs using the unique `sourceId + dedupKey` combination.
+- Upsert projects using `sourceId + externalProjectId`.
+- Upsert announcements using the unique `sourceId + announcementKey` combination. Do not use RSS `guid` or project ID alone.
 - Create a `tor_versions` snapshot only when `contentHash` changes.
 - Keep original source URLs and document checksums for verification.
 - Enable AI evaluation, matching, and notifications only after clean normalization.
@@ -86,8 +91,7 @@ Set `expiresAt` only when the team has approved a retention date. Omit it for re
 | Environment | Database | Purpose |
 | --- | --- | --- |
 | Shared class/demo | `tor_software` | Stable data used by the team and presentation demo |
-| Automated/crawler test | `tor_software_test` | Disposable data that reset scripts may delete |
-| Future production | `tor_software_prod` | Verified live data only; never use test cleanup commands |
+| Approved database | Value of `MONGODB_DB_NAME` | Live database for approved ingestion |
 
 ## Commands
 
@@ -95,11 +99,9 @@ Set `expiresAt` only when the team has approved a retention date. Omit it for re
 | --- | --- |
 | `npm run handoff:verify` | Verify that the shareable package contains required safe files |
 | `npm run db:check` | Confirm Atlas connectivity |
+| `npm run db:setup` | Create or update validators and indexes |
 | `npm run db:verify` | Check collections, validators, and indexes without deleting data |
-| `npm run db:seed` | Insert or update controlled demonstration data |
-| `npm run db:cleanup:raw` | Remove expired staging data from a non-production database |
-| `npm run db:cleanup:run -- <runId>` | Remove one crawler test run and its staging items |
-| `npm run db:reset:test` | Recreate only the database named by `MONGODB_TEST_DB_NAME` |
+| `npm run db:seed` | Seed sources, organizations, companies, users, and audit data only |
 
 ## Files to Share
 
@@ -116,8 +118,8 @@ Never share `.env`, `node_modules/`, personal Atlas passwords, raw access tokens
 
 - `npm run handoff:verify` passes.
 - `npm run db:check` connects using the teammate's own credentials.
-- `npm run db:verify` reports all 15 collections and passes.
+- `npm run db:verify` reports all 17 collections and passes.
 - Authentication code uses hashes and the documented status values.
 - AI and notification workers use the documented retry fields and ready-work indexes.
-- Destructive crawler tests use only `tor_software_test`.
+- Ingestion writes only to the approved database configured by `MONGODB_DB_NAME`.
 - The frontend/backend developer can identify the collection for every product feature using `schema.md`.

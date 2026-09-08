@@ -13,10 +13,12 @@ const client = new MongoClient(uri, {
 const requiredCollections = [
   'sources',
   'organizations',
+  'procurement_projects',
   'tor_announcements',
   'tor_versions',
   'ingestion_runs',
   'raw_ingestion_items',
+  'rss_query_state',
   'users',
   'auth_tokens',
   'sessions',
@@ -31,17 +33,17 @@ const requiredCollections = [
 const expectedRequiredFields = {
   sources: ['rawRetentionDays'],
   organizations: ['ancestorIds'],
-  tor_announcements: ['organization'],
-  ingestion_runs: ['triggeredBy'],
+  procurement_projects: ['externalProjectId', 'organizationId'],
+  tor_announcements: ['departmentId', 'projectId', 'templateId', 'title', 'description', 'publishedAt', 'url', 'procurementMethod', 'announcementType', 'channelParams', 'itemParams', 'firstSeenAt', 'lastSeenAt'],
+  ingestion_runs: ['sourceId', 'fetchedAt', 'request', 'reportedCount', 'itemsReceived', 'complete'],
+  rss_query_state: ['queryKey', 'reportedCount', 'itemsReceived', 'complete', 'splitLevel', 'status', 'retryCount', 'lastCheckedAt'],
   users: ['notificationPreferences'],
   ai_evaluations: ['retryCount', 'lastAttemptAt', 'nextAttemptAt', 'lastError'],
   notifications: ['attemptCount', 'nextAttemptAt', 'deliveryError']
 };
 
 const expectedNestedRequiredFields = {
-  tor_announcements: {
-    organization: ['organizationId', 'nameTh', 'organizationType', 'ancestorIds']
-  },
+  tor_announcements: {},
   users: {
     notificationPreferences: ['channels', 'alertTypes']
   },
@@ -55,8 +57,11 @@ const expectedNestedRequiredFields = {
 
 const expectedIndexes = {
   organizations: ['ix_organizations_ancestors'],
-  tor_announcements: ['ix_tors_organization_ancestors_published'],
-  ingestion_runs: ['ix_ingestion_triggered_started'],
+  procurement_projects: ['uq_projects_source_external'],
+  tor_announcements: ['uq_rss_tors_source_url', 'tx_rss_tors_discovery'],
+  ingestion_runs: ['ix_rss_ingestion_source_fetched'],
+  raw_ingestion_items: ['ttl_raw_ingestion_expiry'],
+  rss_query_state: ['uq_rss_query_source_key', 'ix_rss_query_retry_queue'],
   audit_logs: ['ttl_audit_expiry'],
   ai_evaluations: ['uq_ai_tor_version', 'ix_ai_queue_ready'],
   company_matches: ['uq_matches_company_tor_version'],

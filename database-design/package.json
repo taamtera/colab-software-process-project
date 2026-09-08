@@ -7,11 +7,8 @@
     "handoff:verify": "node scripts/verify-handoff.mjs",
     "db:check": "node scripts/check-connection.mjs",
     "db:setup": "node scripts/setup-database.mjs",
-    "db:seed": "node scripts/seed-demo.mjs",
     "db:verify": "node scripts/verify-database.mjs",
-    "db:cleanup:raw": "node scripts/cleanup-raw.mjs",
-    "db:cleanup:run": "node scripts/cleanup-run.mjs",
-    "db:reset:test": "node scripts/reset-test-database.mjs"
+    "db:seed": "node scripts/seed-demo.mjs"
   },
   "dependencies": {
     "mongodb": "^7.5.0"

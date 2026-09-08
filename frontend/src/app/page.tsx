@@ -11,6 +11,7 @@ import * as authApi from '@/lib/authApi';
 import { safeUserToProfile } from '@/lib/userProfile';
 import { Header } from '@/components/Header';
 import { DashboardHero } from '@/components/DashboardHero';
+import { DashboardStats } from '@/components/DashboardStats';
 import { FilterBar } from '@/components/FilterBar';
 import { TORCard } from '@/components/TORCard';
 import { TORDetailModal } from '@/components/TORDetailModal';
@@ -46,7 +47,7 @@ export default function Home() {
 
   // State Management
   const [activeTab, setActiveTab] = useState<'dashboard' | 'recommendations' | 'profile'>('dashboard');
-  const [currentUser, setCurrentUser] = useState<SoftwareHouseProfile | null>(null);
+  const [currentUser, setCurrentUser] = useState<SoftwareHouseProfile | null>(INITIAL_SOFTWARE_HOUSE);
   const [contracts, setContracts] = useState<TORContract[]>(MOCK_TOR_CONTRACTS);
 
   // Restore the session on load: if a valid auth cookie exists, the backend returns
@@ -265,11 +266,17 @@ ${contract.properties.map((p, i) => `${i + 1}. ${p.property}`).join('\n')}
             <DashboardHero
               totalTORs={contracts.length}
               totalBudgetFormatted={totalBudgetFormatted}
-              onSearchChange={(q) => setFilters(prev => ({ ...prev, searchQuery: q }))}
-              searchQuery={filters.searchQuery}
-              onTriggerAICrawl={handleTriggerAICrawl}
-              isCrawling={isCrawling}
             />
+
+            {/* Dashboard Stats */}
+            <DashboardStats />
+
+          </div>
+        )}
+
+        {/* VIEW 2: FIND TAB (Search & Filter) */}
+        {activeTab === 'find' && (
+          <div className="space-y-5 animate-fadeIn">
 
             {/* 2x2 Filter Dropdowns */}
             <FilterBar
@@ -277,6 +284,8 @@ ${contract.properties.map((p, i) => `${i + 1}. ${p.property}`).join('\n')}
               setFilters={setFilters}
               onResetFilters={handleResetFilters}
               resultCount={filteredContracts.length}
+              onTriggerAICrawl={handleTriggerAICrawl}
+              isCrawling={isCrawling}
             />
 
             {/* TOR Contract Cards Listing */}
@@ -319,7 +328,7 @@ ${contract.properties.map((p, i) => `${i + 1}. ${p.property}`).join('\n')}
           </div>
         )}
 
-        {/* VIEW 2: RECOMMENDATION TAB (Desktop - data) */}
+        {/* VIEW 3: RECOMMENDATION TAB (Desktop - data) */}
         {activeTab === 'recommendations' && (
           currentUser ? (
             <RecommendationView
@@ -348,7 +357,7 @@ ${contract.properties.map((p, i) => `${i + 1}. ${p.property}`).join('\n')}
           )
         )}
 
-        {/* VIEW 3: PROFILE TAB (Desktop - data profile) */}
+        {/* VIEW 4: PROFILE TAB (Desktop - data profile) */}
         {activeTab === 'profile' && (
           currentUser ? (
             <div className="theme-card p-6 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-6 shadow-sm">
