@@ -24,9 +24,10 @@ const STATUS_LABELS: Record<string, string> = {
 
 export function getCode(value: string | Record<string, unknown> | null | undefined) {
   if (typeof value === 'string') {
-    return value;
+    return value.trim().toUpperCase();
   }
-  return String(value?.code || value?.id || value?.value || '');
+  const nestedValue = value?.code || value?.id || value?.value || value?.announcementType || value?.type;
+  return String(nestedValue || '').trim().toUpperCase();
 }
 
 export function getAnnouncementStage(value: string | Record<string, unknown> | null | undefined) {

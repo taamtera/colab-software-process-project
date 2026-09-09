@@ -43,7 +43,6 @@ export const MOCK_TOR_CONTRACTS: TORContract[] = [
     description: 'พัฒนาระบบเชื่อมโยงระเบียบประวัติผู้ป่วยอิเล็กทรอนิกส์ (EHR) ระหว่างโรงพยาบาลในสังกัด กทม. 11 แห่ง พร้อมระบบจองคิวออนไลน์และแอปพลิเคชันประชาชน',
     thumbnail: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=600&q=80',
     pdfUrl: '/mock-tor-002.pdf',
-    pdfPagesCount: 28,
     status: 'Open for Bidding',
     matchedScore: 98,
     properties: [
@@ -82,7 +81,6 @@ export const MOCK_TOR_CONTRACTS: TORContract[] = [
     description: 'จัดทำระบบเชื่อมโยงเซนเซอร์ตรวจวัดคุณภาพอากาศแบบ IoT ทั่วพื้นที่ พร้อมแบบจำลอง AI พยากรณ์ระดับฝุ่นควันล่วงหน้า 72 ชั่วโมง',
     thumbnail: 'https://images.unsplash.com/photo-1611273426858-450d8e3c9fce?auto=format&fit=crop&w=600&q=80',
     pdfUrl: '/mock-tor-003.pdf',
-    pdfPagesCount: 18,
     status: 'Open for Bidding',
     matchedScore: 68,
     properties: [
@@ -120,7 +118,6 @@ export const MOCK_TOR_CONTRACTS: TORContract[] = [
     description: 'ยกระดับการให้บริการยื่นแบบแปลนและขออนุญาตก่อสร้างผ่านช่องทางดิจิทัล 100% พร้อมระบบลงนามอิเล็กทรอนิกส์ (e-Signature) และชำระค่าธรรมเนียมออนไลน์',
     thumbnail: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=600&q=80',
     pdfUrl: '/mock-tor-004.pdf',
-    pdfPagesCount: 22,
     status: 'Open for Bidding',
     matchedScore: 70,
     properties: [
@@ -158,7 +155,6 @@ export const MOCK_TOR_CONTRACTS: TORContract[] = [
     description: 'ออกแบบย้ายฐานข้อมูลระบบงบประมาณขึ้นโครงสร้างพื้นฐาน Private Cloud ปลอดภัยสูง พร้อมแดชบอร์ดสรุปผลผู้บริหารด้วย AI Data Insights',
     thumbnail: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=600&q=80',
     pdfUrl: '/mock-tor-005.pdf',
-    pdfPagesCount: 35,
     status: 'Open for Bidding',
     matchedScore: 59,
     properties: [
@@ -196,7 +192,6 @@ export const MOCK_TOR_CONTRACTS: TORContract[] = [
     description: 'จัดตั้งศูนย์ปฏิบัติการเฝ้าระวังความปลอดภัยไซเบอร์ (Security Operations Center) พร้อมระบบตรวจจับการโจมตีอัตโนมัติด้วย AI SIEM',
     thumbnail: 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=600&q=80',
     pdfUrl: '/mock-tor-006.pdf',
-    pdfPagesCount: 40,
     status: 'Open for Bidding',
     matchedScore: 78,
     properties: [

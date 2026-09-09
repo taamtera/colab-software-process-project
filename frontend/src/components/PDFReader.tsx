@@ -7,8 +7,6 @@ import {
   Download, 
   ZoomIn, 
   ZoomOut, 
-  ChevronLeft, 
-  ChevronRight, 
   Sparkles
 } from 'lucide-react';
 
@@ -18,21 +16,8 @@ interface PDFReaderProps {
 }
 
 export const PDFReader: React.FC<PDFReaderProps> = ({ contract, onDownload }) => {
-  const [currentPage, setCurrentPage] = useState<number>(1);
   const [zoomLevel, setZoomLevel] = useState<number>(100);
   const [highlightAI, setHighlightAI] = useState<boolean>(true);
-
-  const handleNextPage = () => {
-    if (currentPage < contract.pdfPagesCount) {
-      setCurrentPage(prev => prev + 1);
-    }
-  };
-
-  const handlePrevPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(prev => prev - 1);
-    }
-  };
 
   return (
     <div className="flex flex-col h-[550px] bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-lg">
@@ -49,26 +34,7 @@ export const PDFReader: React.FC<PDFReaderProps> = ({ contract, onDownload }) =>
 
           <span className="text-slate-300 dark:text-slate-700">|</span>
 
-          {/* Page Navigation */}
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handlePrevPage}
-              disabled={currentPage === 1}
-              className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-800 disabled:opacity-40"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <span className="font-mono">
-              Page <span className="text-sky-600 dark:text-sky-400 font-bold">{currentPage}</span> / {contract.pdfPagesCount}
-            </span>
-            <button
-              onClick={handleNextPage}
-              disabled={currentPage === contract.pdfPagesCount}
-              className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-800 disabled:opacity-40"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
+          <span className="text-xs text-slate-500 dark:text-slate-400">Document preview</span>
         </div>
 
         {/* Center: AI Highlight Toggle */}
@@ -139,9 +105,8 @@ export const PDFReader: React.FC<PDFReaderProps> = ({ contract, onDownload }) =>
             </p>
           </div>
 
-          {/* Page Content based on selected page */}
-          {currentPage === 1 ? (
-            <div className="space-y-4 text-sm leading-relaxed text-slate-800 font-sans">
+          {/* Document preview content */}
+          <div className="space-y-4 text-sm leading-relaxed text-slate-800 font-sans">
               <div>
                 <h3 className="font-bold text-base text-slate-900 border-b border-slate-200 pb-1 mb-2">
                   1. วัตถุประสงค์ (Purpose & Requirements)
@@ -205,20 +170,6 @@ export const PDFReader: React.FC<PDFReaderProps> = ({ contract, onDownload }) =>
                 </div>
               </div>
             </div>
-          ) : (
-            <div className="space-y-4 text-xs leading-relaxed text-slate-700 font-sans">
-              <h3 className="font-bold text-base text-slate-900 border-b border-slate-200 pb-1 mb-2">
-                หน้า {currentPage}: ข้อกำหนดทางเทคนิคสถาปัตยกรรม (Technical Specifications)
-              </h3>
-              <p>
-                ผู้เสนอราคาจะต้องดำเนินการออกแบบ สถาปัตยกรรมซอฟต์แวร์ และส่งมอบคู่มือการติดตั้งและซอร์สโค้ด (Source Code) 
-                ทั้งหมดให้แก่ {contract.contractOwner} ภายในกำหนดเวลาดำเนินงาน.
-              </p>
-              <div className="p-4 bg-slate-100 rounded border border-slate-300 text-slate-600 font-mono text-[11px]">
-                [PDF Content Page {currentPage} Preview - Technical Architecture & Security Protocols]
-              </div>
-            </div>
-          )}
 
           {/* Watermark Notice */}
           <div className="absolute bottom-4 right-6 text-[10px] text-slate-400 font-sans flex items-center gap-1">

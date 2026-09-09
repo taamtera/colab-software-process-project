@@ -106,10 +106,9 @@ export const TORCard: React.FC<TORCardProps> = ({ contract, onSelect }) => {
         </div>
 
         <div className="mt-3 pt-2 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-[11px]">
-          <span className="text-slate-500 dark:text-slate-400">PDF Reader:</span>
-          <span className="text-slate-600 dark:text-slate-300 font-mono flex items-center gap-1">
-            <FileText className="w-3 h-3 text-slate-400" />
-            {contract.pdfPagesCount} pages
+          <span className="text-slate-500 dark:text-slate-400">TOR stage:</span>
+          <span className="text-slate-700 dark:text-slate-300 font-semibold">
+            {getAnnouncementStage(contract.announcementType)}
           </span>
         </div>
       </div>

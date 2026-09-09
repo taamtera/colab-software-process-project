@@ -41,7 +41,6 @@ export interface TORContract {
   pdfUrl: string;
   url?: string | null;
   documentUrl?: string | null;
-  pdfPagesCount: number;
   aiEvaluation: AIEvaluation;
   status: 'Open for Bidding' | 'Under AI Review' | 'Matched' | 'Closed' | string;
   matchedScore?: number;

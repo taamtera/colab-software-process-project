@@ -91,7 +91,6 @@ export function toTorContract(tor: BackendTor): TORContract {
     pdfUrl: documentUrl || '',
     url: tor.url || null,
     documentUrl: tor.documentUrl || null,
-    pdfPagesCount: 0,
     aiEvaluation: {
       priceScore: 0,
       priceAssessment: 'AI evaluation not available yet.',
