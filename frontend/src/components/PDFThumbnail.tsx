@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { TORContract } from '@/types';
 import { resolveApiUrl } from '@/lib/api';
+import { getStatusClasses, getStatusLabel } from '@/lib/torPresentation';
 import { FileText, ExternalLink, Sparkles } from 'lucide-react';
 
 interface PDFThumbnailProps {
@@ -47,11 +48,11 @@ export const PDFThumbnail: React.FC<PDFThumbnailProps> = ({ contract, className 
   // Otherwise, render a realistic official Government PDF Document 1st-Page Sheet Preview
   return (
     <div className={`relative overflow-hidden rounded-md bg-gradient-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-950 border border-slate-200 dark:border-slate-800 p-2.5 flex flex-col justify-between select-none group/thumb shadow-sm ${className}`}>
-      {/* Top Banner: PDF 1st Page badge & Category indicator */}
+      {/* Top Banner: TOR status & category indicator */}
       <div className="flex items-center justify-between gap-1 mb-1.5">
-        <div className="flex items-center gap-1 px-1.5 py-0.5 bg-red-600 text-white rounded text-[9px] font-black uppercase tracking-wider shadow-xs">
+        <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded border text-[9px] font-black uppercase tracking-wider shadow-xs ${getStatusClasses(contract.status, contract.announcementType)}`}>
           <FileText className="w-2.5 h-2.5 shrink-0" />
-          <span>PDF หน้า 1</span>
+          <span>{getStatusLabel(contract.status, contract.announcementType)}</span>
         </div>
         <span className="text-[9px] font-semibold text-slate-500 dark:text-slate-400 truncate max-w-[90px]">
           {(contract.departmentName || contract.contractOwner || 'e-GP').split(' ')[0]}

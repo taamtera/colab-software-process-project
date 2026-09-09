@@ -124,12 +124,15 @@ export const FilterBar: React.FC<FilterBarProps> = ({
               className="w-full appearance-none theme-input rounded-xl px-4 py-2 text-xs focus:outline-none transition-all cursor-pointer pr-10"
             >
               <option value="All" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">ทั้งหมด (ทุกสถานะ)</option>
-              <option value="open" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Open (เปิดรับข้อเสนอ)</option>
-              <option value="Under AI Review" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Under AI Review (อยู่ระหว่างวิเคราะห์)</option>
-              <option value="Matched" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Matched (ตรงคุณสมบัติ)</option>
-              <option value="closed" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Closed (ปิดรับแล้ว)</option>
-              <option value="cancelled" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Cancelled (ยกเลิก)</option>
-              <option value="awarded" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Awarded (ประกาศผล)</option>
+              <option value="P0" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Procurement Plan</option>
+              <option value="15" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Reference Price</option>
+              <option value="B0" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Draft TOR</option>
+              <option value="D0" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Tender Open</option>
+              <option value="D1" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Tender Cancelled</option>
+              <option value="D2" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Tender Changed</option>
+              <option value="W0" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Awarded</option>
+              <option value="W1" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Award Cancelled</option>
+              <option value="W2" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Award Changed</option>
             </select>
             <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
           </div>

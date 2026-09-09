@@ -19,7 +19,7 @@ import { AuthModal } from '@/components/AuthModal';
 import { SoftwareHouseProfileModal } from '@/components/SoftwareHouseProfileModal';
 import { RecommendationView } from '@/components/RecommendationView';
 import { NotificationToast } from '@/components/NotificationToast';
-import { getStatusKey } from '@/lib/torPresentation';
+import { getStageCode } from '@/lib/torPresentation';
 import { 
   Sparkles, 
   Layers, 
@@ -160,7 +160,7 @@ export default function Home() {
         return false;
       }
 
-      if (filters.status !== 'All' && getStatusKey(contract.status, contract.announcementType) !== filters.status) {
+      if (filters.status !== 'All' && getStageCode(contract.announcementType, contract.status) !== filters.status) {
         return false;
       }
 

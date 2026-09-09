@@ -35,7 +35,7 @@ function parseIntEnv(value, fallback) {
 export const env = Object.freeze({
   nodeEnv: process.env.NODE_ENV?.trim() || 'development',
   port: parsePort(process.env.PORT?.trim() || '4000'),
-  frontendOrigins: (process.env.FRONTEND_ORIGIN || 'http://localhost:3000')
+  frontendOrigins: (process.env.FRONTEND_ORIGIN || 'http://localhost:3000,http://127.0.0.1:3000')
     .split(',')
     .map((origin) => origin.trim())
     .filter(Boolean),

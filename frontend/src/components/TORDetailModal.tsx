@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { TORContract } from '@/types';
 import { PDFReader } from './PDFReader';
 import { PDFThumbnail } from './PDFThumbnail';
-import { getAnnouncementStage, getStatusLabel } from '@/lib/torPresentation';
+import { getAnnouncementStage, getStatusClasses, getStatusLabel } from '@/lib/torPresentation';
 import { 
   X, 
   Download, 
@@ -76,8 +76,11 @@ export const TORDetailModal: React.FC<TORDetailModalProps> = ({
                   <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
                     {contract.category}
                   </span>
-                  <span className="text-xs text-slate-500 dark:text-slate-400">
-                    Status: <span className="text-slate-700 dark:text-slate-300 font-semibold">{getStatusLabel(contract.status, contract.announcementType)}</span>
+                  <span className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                    Status:
+                    <span className={`px-2 py-0.5 rounded-md border font-semibold ${getStatusClasses(contract.status, contract.announcementType)}`}>
+                      {getStatusLabel(contract.status, contract.announcementType)}
+                    </span>
                   </span>
                 </div>
 
