@@ -118,7 +118,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
         {/* Dropdown 3: Status Filter */}
         <div className="relative">
           <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1.5 font-medium">
-            สถานะประกาศ (Tender Status)
+            ค้นหาตามสถานะ (Search Status)
           </label>
           <div className="relative">
             <select

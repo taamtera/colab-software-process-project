@@ -34,7 +34,8 @@ export function getCode(value: string | Record<string, unknown> | null | undefin
 
 export function getAnnouncementStage(value: string | Record<string, unknown> | null | undefined) {
   const code = getCode(value);
-  return ANNOUNCEMENT_STAGE_LABELS[code] || code || 'TOR Announcement';
+  const stageCode = getStageCode(value);
+  return ANNOUNCEMENT_STAGE_LABELS[stageCode] || code || 'TOR Announcement';
 }
 
 export function getStageCode(announcementType: string | Record<string, unknown> | null | undefined, status?: string | null) {
@@ -57,14 +58,14 @@ export function getStatusKey(status: string | null | undefined, announcementType
   if (normalized === 'Closed') return 'closed';
   if (normalized === 'Under AI Review' || normalized === 'Matched') return normalized;
   if (STATUS_LABELS[normalized]) return normalized;
-  const code = getCode(announcementType);
+  const code = getStageCode(announcementType, status);
   if (['D1', 'W1'].includes(code)) return 'cancelled';
   if (['W0', 'W2'].includes(code)) return 'awarded';
   return 'open';
 }
 
 export function getStatusLabel(status: string | null | undefined, announcementType?: string | Record<string, unknown> | null) {
-  const stageCode = getCode(announcementType);
+  const stageCode = getStageCode(announcementType, status);
   if (ANNOUNCEMENT_STAGE_LABELS[stageCode]) {
     return ANNOUNCEMENT_STAGE_LABELS[stageCode];
   }
@@ -79,7 +80,7 @@ export function getStatusLabel(status: string | null | undefined, announcementTy
 }
 
 export function getStatusClasses(status: string | null | undefined, announcementType?: string | Record<string, unknown> | null) {
-  const stageCode = getCode(announcementType);
+  const stageCode = getStageCode(announcementType, status);
   if (stageCode === 'P0' || stageCode === '15' || stageCode === 'B0') {
     return 'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800';
   }
