@@ -21,6 +21,7 @@ export interface TORContract {
   id: string;
   templateId?: string | null;
   projectId?: string | null;
+  sourceId?: string | null;
   title: string;
   contractOwner: string; // Publisher / Organization
   departmentId?: string | null;

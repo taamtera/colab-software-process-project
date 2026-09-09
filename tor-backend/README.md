@@ -37,6 +37,8 @@ The frontend reads TOR announcements through the Express API. Dates in responses
 
 - `GET /api/tors`: list TOR announcements. Supports `search`, `status`, `category`, `tagIds`, `sourceId`, `organizationId`, `minBudget`, `maxBudget`, `deadlineAfter`, `page`, and `limit` query parameters. `tagIds` accepts either a comma-separated list or repeated query parameters.
 - `GET /api/tors/:torId`: read one TOR announcement by MongoDB ObjectId.
+- `GET /api/tors/documents/:templateId`: proxy the real e-GP document inline for browser preview.
+- `GET /api/tors/documents/:templateId/download`: proxy the real e-GP document as a forced download.
 - `PATCH /api/tors/:torId`: update editable TOR fields. Requires `project_manager` or `system_admin` authentication.
 - `GET /api/thumbnail/:templateId`: stream a stored WebP thumbnail from the `thumbnails` collection. Returns `404` when no image exists and never returns the stored Base64 value as JSON.
 

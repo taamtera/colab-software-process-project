@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import { TORContract } from '@/types';
 import { PDFReader } from './PDFReader';
-import { PDFThumbnail } from './PDFThumbnail';
 import { getAnnouncementStage, getStatusClasses, getStatusLabel } from '@/lib/torPresentation';
 import { 
   X, 
@@ -53,13 +52,37 @@ export const TORDetailModal: React.FC<TORDetailModalProps> = ({
           {/* Top Section matching Desktop - 2 wireframe layout */}
           <div className="grid grid-cols-1 md:grid-cols-12 gap-5 bg-slate-50 dark:bg-slate-950/60 p-5 rounded-lg border border-slate-200 dark:border-slate-800">
             
-            {/* Left PDF Preview & Download Button */}
-            <div className="md:col-span-4 flex flex-col items-center gap-3">
-              <div className="w-full h-52 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800">
-                <PDFThumbnail contract={contract} className="w-full h-full" />
+            {/* Source metadata and document action */}
+            <div className="md:col-span-4 flex flex-col gap-3">
+              <div className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <FileText className="w-4 h-4 text-sky-600 dark:text-sky-400" />
+                  <h2 className="text-sm font-bold text-slate-900 dark:text-white">Source data</h2>
+                </div>
+                <dl className="space-y-2 text-xs">
+                  <div className="flex justify-between gap-3">
+                    <dt className="text-slate-500 dark:text-slate-400">Source</dt>
+                    <dd className="font-semibold text-slate-800 dark:text-slate-200">{contract.sourceId || 'EGP'}</dd>
+                  </div>
+                  <div className="flex justify-between gap-3">
+                    <dt className="text-slate-500 dark:text-slate-400">Department ID</dt>
+                    <dd className="font-semibold text-slate-800 dark:text-slate-200">{contract.departmentId || 'Not available'}</dd>
+                  </div>
+                  <div className="flex justify-between gap-3">
+                    <dt className="text-slate-500 dark:text-slate-400">Project ID</dt>
+                    <dd className="font-mono font-semibold text-slate-800 dark:text-slate-200 break-all text-right">{contract.projectId || 'Not available'}</dd>
+                  </div>
+                  <div className="flex justify-between gap-3">
+                    <dt className="text-slate-500 dark:text-slate-400">Template ID</dt>
+                    <dd className="font-mono font-semibold text-slate-800 dark:text-slate-200 break-all text-right">{contract.templateId || 'Not available'}</dd>
+                  </div>
+                  <div className="flex justify-between gap-3">
+                    <dt className="text-slate-500 dark:text-slate-400">Announcement</dt>
+                    <dd className="font-semibold text-slate-800 dark:text-slate-200 text-right">{typeof contract.announcementType === 'string' ? contract.announcementType : getAnnouncementStage(contract.announcementType)}</dd>
+                  </div>
+                </dl>
               </div>
 
-              {/* Download Button matching wireframe 'download' below image */}
               <button
                 onClick={() => onDownloadPDF(contract)}
                 className="w-full py-2.5 px-4 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl shadow-sm flex items-center justify-center gap-2 text-sm transition-all"

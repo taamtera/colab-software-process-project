@@ -21,6 +21,7 @@ import { RecommendationView } from '@/components/RecommendationView';
 import { NotificationToast } from '@/components/NotificationToast';
 import { getStageCode } from '@/lib/torPresentation';
 import { getAnnouncementStage } from '@/lib/torPresentation';
+import { resolveApiUrl } from '@/lib/api';
 import { 
   Sparkles, 
   Layers, 
@@ -225,6 +226,12 @@ export default function Home() {
   };
 
   const handleDownloadPDF = (contract: TORContract) => {
+    if (contract.templateId && (contract.documentUrl || contract.url)) {
+      const downloadUrl = resolveApiUrl(`/api/tors/documents/${encodeURIComponent(contract.templateId)}/download`);
+      if (downloadUrl) window.location.assign(downloadUrl);
+      return;
+    }
+
     const documentUrl = contract.documentUrl || contract.url || contract.pdfUrl;
     if (documentUrl) {
       window.open(documentUrl, '_blank', 'noopener,noreferrer');

@@ -10,6 +10,10 @@ export async function findTorById(torId) {
   return tors().findOne({ _id: toObjectId(torId, 'torId') });
 }
 
+export async function findTorByTemplateId(templateId) {
+  return tors().findOne({ templateId });
+}
+
 export async function updateTor(torId, changes, updatedByUserId) {
   const now = new Date();
   return tors().findOneAndUpdate(

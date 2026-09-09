@@ -75,6 +75,7 @@ export function toTorContract(tor: BackendTor): TORContract {
     id: tor._id || tor.id || tor.templateId || `${tor.sourceId || 'tor'}-${title}`,
     templateId: tor.templateId || null,
     projectId: tor.projectId || null,
+    sourceId: tor.sourceId || null,
     title,
     contractOwner: tor.departmentName || tor.sourceId || 'e-GP',
     departmentId: tor.departmentId || null,

@@ -10,5 +10,7 @@ function handle(controller) {
 export const torRouter = Router();
 
 torRouter.get('/', handle(torController.list));
+torRouter.get('/documents/:templateId', handle(torController.previewDocument));
+torRouter.get('/documents/:templateId/download', handle(torController.downloadDocument));
 torRouter.get('/:torId', handle(torController.getById));
 torRouter.patch('/:torId', authenticate, authorize('project_manager', 'system_admin'), handle(torController.update));
