@@ -10,6 +10,21 @@ export async function findTorById(torId) {
   return tors().findOne({ _id: toObjectId(torId, 'torId') });
 }
 
+export async function updateTor(torId, changes, updatedByUserId) {
+  const now = new Date();
+  return tors().findOneAndUpdate(
+    { _id: toObjectId(torId, 'torId') },
+    {
+      $set: {
+        ...changes,
+        updatedAt: now,
+        updatedByUserId: toObjectId(updatedByUserId, 'updatedByUserId')
+      }
+    },
+    { returnDocument: 'after' }
+  );
+}
+
 export async function listTors({
   search = null,
   status = 'open',

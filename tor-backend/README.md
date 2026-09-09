@@ -10,12 +10,13 @@ The frontend must never receive `MONGODB_URI` or connect directly to Atlas.
 
 ## Local Setup
 
-1. Copy `.env.example` to `.env`.
-2. Add the private Atlas URI and keep `MONGODB_DB_NAME=tor_software`.
-3. Run `npm install`.
-4. Run `npm run check`.
-5. Run `npm run dev`.
-6. Open `http://localhost:4000/api/health`.
+1. Add `MONGODB_URI` and `MONGODB_DB_NAME` to `database-design/.env`.
+2. Run `npm install` from `tor-backend`.
+3. Run `npm run check`.
+4. Run `npm run dev`.
+5. Open `http://localhost:4000/api/health`.
+
+The backend loads the shared `database-design/.env` automatically. Shell or deployment environment variables take precedence over values in that file. `.env.example` remains available as a reference for backend-only settings such as authentication and CORS.
 
 ## Current Foundation
 
@@ -29,6 +30,32 @@ The frontend must never receive `MONGODB_URI` or connect directly to Atlas.
 - Graceful server and database shutdown
 - Reusable repositories for users, secure tokens, sessions, audit logs, companies, and TOR discovery
 - Controlled tag catalog and reviewed TOR/company tag assignments
+
+## TOR API
+
+The frontend reads TOR announcements through the Express API. Dates in responses are serialized by MongoDB/Express as ISO date strings.
+
+- `GET /api/tors`: list TOR announcements. Supports `search`, `status`, `category`, `tagIds`, `sourceId`, `organizationId`, `minBudget`, `maxBudget`, `deadlineAfter`, `page`, and `limit` query parameters. `tagIds` accepts either a comma-separated list or repeated query parameters.
+- `GET /api/tors/:torId`: read one TOR announcement by MongoDB ObjectId.
+- `PATCH /api/tors/:torId`: update editable TOR fields. Requires `project_manager` or `system_admin` authentication.
+
+The update body may contain `title`, `description`, `summary`, `category`, `publishedAt`, `submissionDeadline`, `projectStartAt`, `projectEndAt`, `sourceUrl`, `url`, `status`, and `budget`. Dates must be ISO date strings, `status` must be `draft`, `open`, `closed`, `cancelled`, or `awarded`, and unknown fields are rejected. The API records `updatedAt` and `updatedByUserId` automatically.
+
+Successful list responses use this shape:
+
+```json
+{
+	"items": [],
+	"pagination": {
+		"page": 1,
+		"limit": 20,
+		"total": 0,
+		"totalPages": 0
+	}
+}
+```
+
+Successful detail and update responses use `{ "tor": {} }`. Invalid ObjectIds, invalid update fields, missing records, and authentication failures return the standard `{ "error": { "code", "message", "requestId" } }` error shape.
 
 ## Tagging API
 

@@ -1,6 +1,11 @@
 import dotenv from 'dotenv';
+import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-dotenv.config({ quiet: true });
+dotenv.config({
+  path: resolve(fileURLToPath(new URL('../../../database-design/.env', import.meta.url))),
+  quiet: true
+});
 
 function required(name) {
   const value = process.env[name]?.trim();
