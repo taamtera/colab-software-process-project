@@ -116,16 +116,33 @@ export async function register(input, context) {
     district: input.company.district
   });
 
-  const createdUser = await createRegisteredUser({
-    email: input.email,
-    passwordHash,
-    firstName: input.firstName,
-    lastName: input.lastName,
-    phone: input.phone,
-    jobTitle: input.jobTitle,
-    companyId: company._id,
-    role: 'company_admin'
-  });
+  let createdUser;
+  try {
+    createdUser = await createRegisteredUser({
+      email: input.email,
+      passwordHash,
+      firstName: input.firstName,
+      lastName: input.lastName,
+      phone: input.phone,
+      jobTitle: input.jobTitle,
+      companyId: company._id,
+      role: 'company_admin'
+    });
+  } catch (error) {
+    // The `uq_users_email_normalized` unique index is the last line of defense: if two
+    // registrations race past the findUserByEmail check above, the second insert fails
+    // with a duplicate-key error. Map it to the same clean 409 instead of a 500.
+    if (error?.code === 11000) {
+      await audit(context, {
+        event: 'auth.register',
+        outcome: 'failure',
+        targetType: 'user',
+        metadata: { reason: 'email_exists_race' }
+      });
+      throw httpError(409, 'EMAIL_ALREADY_REGISTERED', 'This email is already registered.');
+    }
+    throw error;
+  }
 
   await setCompanyCreator(company._id, createdUser._id);
   // Email verification is disabled: activate the account immediately.

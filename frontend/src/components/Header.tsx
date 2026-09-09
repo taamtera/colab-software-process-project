@@ -75,9 +75,6 @@ export const Header: React.FC<HeaderProps> = ({
               <span className="font-bold text-base md:text-lg text-slate-900 dark:text-white tracking-tight">
                 Bangkok TOR<span className="text-slate-600 dark:text-slate-300"> Intelligence</span>
               </span>
-              <span className="flex-none px-2 py-0.5 w-[100px] text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 rounded-full">
-                Vertex AI
-              </span>
             </div>
             <p className="text-xs text-slate-400 dark:text-slate-500 hidden sm:block">Bangkok TOR Discovery, Evaluation & Matching</p>
           </div>
@@ -151,19 +148,13 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Theme Switcher */}
           <button
             onClick={onToggleTheme}
-            className="p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors flex items-center gap-1.5 text-xs font-medium"
+            className="p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors flex items-center justify-center"
             title="Toggle Light/Dark Theme"
           >
             {themeMode === 'dark' ? (
-              <>
-                <Sun className="w-4 h-4 text-amber-400" />
-                <span className="hidden sm:inline">Light</span>
-              </>
+              <Sun className="w-4 h-4 text-amber-400" />
             ) : (
-              <>
-                <Moon className="w-4 h-4 text-slate-500" />
-                <span className="hidden sm:inline">Dark</span>
-              </>
+              <Moon className="w-4 h-4 text-slate-500" />
             )}
           </button>
 

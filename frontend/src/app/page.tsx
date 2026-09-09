@@ -46,8 +46,8 @@ export default function Home() {
   };
 
   // State Management
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'recommendations' | 'profile'>('dashboard');
-  const [currentUser, setCurrentUser] = useState<SoftwareHouseProfile | null>(INITIAL_SOFTWARE_HOUSE);
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'find' | 'recommendations' | 'profile'>('dashboard');
+  const [currentUser, setCurrentUser] = useState<SoftwareHouseProfile | null>(null);
   const [contracts, setContracts] = useState<TORContract[]>(MOCK_TOR_CONTRACTS);
 
   // Restore the session on load: if a valid auth cookie exists, the backend returns
