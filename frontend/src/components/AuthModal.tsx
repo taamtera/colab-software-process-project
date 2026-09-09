@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { SoftwareHouseProfile } from '@/types';
-import { X, Lock, Mail, Building, User, Sparkles, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { X, Lock, Mail, Building, User, Sparkles, CheckCircle2, AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react';
 import * as authApi from '@/lib/authApi';
 import { safeUserToProfile } from '@/lib/userProfile';
 
@@ -19,6 +19,30 @@ function splitName(fullName: string): { firstName: string; lastName: string } {
   return { firstName, lastName: parts.join(' ') || firstName };
 }
 
+// Turns a backend error into a clear, bilingual message. Keyed by the API error
+// code so the wording stays consistent even if the backend text changes.
+const ERROR_MESSAGES: Record<string, string> = {
+  INVALID_CREDENTIALS: 'อีเมลหรือรหัสผ่านไม่ถูกต้อง (Incorrect email or password). Please try again.',
+  EMAIL_ALREADY_REGISTERED: 'อีเมลนี้ถูกใช้งานแล้ว (This email is already registered). Try logging in instead.',
+  ACCOUNT_LOCKED: 'บัญชีถูกล็อกชั่วคราวจากการเข้าสู่ระบบผิดหลายครั้ง กรุณาลองใหม่ภายหลัง (Account temporarily locked after too many attempts — try again later).',
+  ACCOUNT_SUSPENDED: 'บัญชีนี้ถูกระงับการใช้งาน (This account has been suspended).',
+  COMPANY_ALREADY_REGISTERED: 'เลขประจำตัวผู้เสียภาษีนี้ถูกใช้ลงทะเบียนแล้ว (A company with this Tax ID already exists).',
+  NETWORK_ERROR: 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ (Cannot reach the server). Please check your connection and try again.',
+  INTERNAL_SERVER_ERROR: 'เซิร์ฟเวอร์ขัดข้อง กรุณาลองใหม่อีกครั้ง (Server error — please try again in a moment).'
+};
+
+function friendlyAuthError(error: unknown): string {
+  if (error instanceof authApi.ApiError) {
+    // Validation errors carry a specific, useful message from the server (e.g. which
+    // field is wrong) — keep it. Otherwise use our clear mapped message.
+    if (error.code === 'VALIDATION_ERROR' && error.message) {
+      return error.message;
+    }
+    return ERROR_MESSAGES[error.code] ?? error.message ?? 'เกิดข้อผิดพลาด กรุณาลองใหม่ (Something went wrong — please try again).';
+  }
+  return 'เกิดข้อผิดพลาด กรุณาลองใหม่ (Something went wrong — please try again).';
+}
+
 export const AuthModal: React.FC<AuthModalProps> = ({
   isOpen,
   mode: initialMode,
@@ -29,11 +53,30 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [companyName, setCompanyName] = useState('');
   const [taxId, setTaxId] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [infoMsg, setInfoMsg] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  // The modal component stays mounted (it just renders null when closed), so re-sync
+  // to the requested mode each time it opens — otherwise it keeps whatever mode was
+  // last used. Clicking "log in" always opens login; "sign in" always opens sign-in.
+  useEffect(() => {
+    if (isOpen) {
+      setMode(initialMode);
+      setErrorMsg(null);
+      setInfoMsg(null);
+      // Never carry a typed password across a close/reopen.
+      setPassword('');
+      setConfirmPassword('');
+      setShowPassword(false);
+      setShowConfirm(false);
+    }
+  }, [isOpen, initialMode]);
 
   if (!isOpen) return null;
 
@@ -47,6 +90,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     e.preventDefault();
     setErrorMsg(null);
     setInfoMsg(null);
+
+    // On sign-up the user must re-type the password to confirm it matches.
+    if (mode === 'signin' && password !== confirmPassword) {
+      setErrorMsg('รหัสผ่านไม่ตรงกัน (Passwords do not match).');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -69,10 +119,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         onClose();
       }
     } catch (error) {
-      const message = error instanceof authApi.ApiError
-        ? error.message
-        : 'Something went wrong. Please try again.';
-      setErrorMsg(message);
+      setErrorMsg(friendlyAuthError(error));
     } finally {
       setLoading(false);
     }
@@ -213,16 +260,54 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             <div className="relative">
               <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 required
                 minLength={mode === 'signin' ? 8 : undefined}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder={mode === 'signin' ? 'อย่างน้อย 8 ตัวอักษร' : ''}
-                className="w-full pl-10 pr-4 py-2.5 theme-input rounded-xl text-sm font-mono"
+                className="w-full pl-10 pr-10 py-2.5 theme-input rounded-xl text-sm font-mono"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                title={showPassword ? 'Hide password' : 'Show password'}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
             </div>
           </div>
+
+          {mode === 'signin' && (
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                ยืนยันรหัสผ่าน (Confirm Password)
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input
+                  type={showConfirm ? 'text' : 'password'}
+                  required
+                  minLength={8}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="พิมพ์รหัสผ่านอีกครั้ง"
+                  className="w-full pl-10 pr-10 py-2.5 theme-input rounded-xl text-sm font-mono"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirm((v) => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                  title={showConfirm ? 'Hide password' : 'Show password'}
+                  aria-label={showConfirm ? 'Hide password' : 'Show password'}
+                >
+                  {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+          )}
 
           {errorMsg && (
             <div className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-lg text-xs text-red-700 dark:text-red-300 flex items-center gap-2">

@@ -52,7 +52,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
         <div className="flex items-center gap-2">
           <SlidersHorizontal className="w-4 h-4 text-slate-400" />
           <h2 className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">
-            ตัวกรองค้นหา TOR (2x2 Filters)
+            ตัวกรองค้นหา TOR
           </h2>
         </div>
         <div className="flex items-center gap-3">
