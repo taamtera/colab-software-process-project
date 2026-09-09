@@ -7,6 +7,7 @@ interface BackendTor {
   templateId?: string | null;
   projectId?: string | null;
   sourceId?: string | null;
+  departmentId?: string | null;
   title?: string | null;
   description?: string | null;
   departmentName?: string | null;
@@ -30,6 +31,9 @@ interface BackendTor {
     requirementLevel?: 'required' | 'preferred' | 'informational';
     evidence?: string | null;
   }>;
+  itemParams?: {
+    templateType?: string | null;
+  };
 }
 
 interface BackendTorListResponse {
@@ -73,7 +77,7 @@ export function toTorContract(tor: BackendTor): TORContract {
     projectId: tor.projectId || null,
     title,
     contractOwner: tor.departmentName || tor.sourceId || 'e-GP',
-    departmentId: null,
+    departmentId: tor.departmentId || null,
     departmentName: tor.departmentName || null,
     publisherType: 'Ministry',
     price: tor.budget?.maxAmount || tor.budget?.minAmount || 0,
@@ -85,7 +89,7 @@ export function toTorContract(tor: BackendTor): TORContract {
     submissionDeadline: tor.submissionDeadline || 'Not specified',
     category: textValue(tor.procurementMethod) || 'Government procurement',
     procurementMethod: tor.procurementMethod || null,
-    announcementType: tor.announcementType || null,
+    announcementType: tor.itemParams?.templateType || tor.announcementType || null,
     description: tor.description || '',
     properties: mapRequirements(tor),
     pdfUrl: documentUrl || '',

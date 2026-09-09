@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { FilterState } from '@/types';
-import { TOR_CATEGORIES } from '@/data/mockData';
+import { EGP_DEPARTMENTS } from '@/data/mockData';
 import { SlidersHorizontal, ChevronDown, Search, RefreshCw } from 'lucide-react';
 
 interface FilterBarProps {
@@ -71,20 +71,23 @@ export const FilterBar: React.FC<FilterBarProps> = ({
       {/* 2x2 Grid Dropdowns */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         
-        {/* Dropdown 1: Category Filter */}
+        {/* Dropdown 1: Department Filter */}
         <div className="relative">
           <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1.5 font-medium">
-            หมวดหมู่ TOR (Category)
+            หน่วยงาน (Department)
           </label>
           <div className="relative">
             <select
-              value={filters.category}
-              onChange={(e) => setFilters(prev => ({ ...prev, category: e.target.value }))}
+              value={filters.department}
+              onChange={(e) => setFilters(prev => ({ ...prev, department: e.target.value }))}
               className="w-full appearance-none theme-input rounded-xl px-4 py-2 text-xs focus:outline-none transition-all cursor-pointer pr-10"
             >
-              {TOR_CATEGORIES.map((cat) => (
-                <option key={cat} value={cat} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
-                  {cat}
+              <option value="All Departments" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+                ทุกหน่วยงาน
+              </option>
+              {EGP_DEPARTMENTS.map((department) => (
+                <option key={department.deptId} value={department.deptId} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+                  {department.deptId} - {department.name}
                 </option>
               ))}
             </select>

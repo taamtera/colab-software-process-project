@@ -67,7 +67,7 @@ export interface SoftwareHouseProfile {
 
 export interface FilterState {
   searchQuery: string;
-  category: string;
+  department: string;
   minPrice: number;
   maxPrice: number;
   minMatchScore: number;

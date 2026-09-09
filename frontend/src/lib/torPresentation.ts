@@ -42,6 +42,12 @@ export function getStageCode(announcementType: string | Record<string, unknown> 
   if (ANNOUNCEMENT_STAGE_CODES.includes(code)) {
     return code;
   }
+  if (code.includes('ประกาศเชิญชวน')) {
+    return 'D0';
+  }
+  if (code.includes('ยกเลิก')) {
+    return 'D1';
+  }
   return status || 'open';
 }
 
@@ -61,6 +67,12 @@ export function getStatusLabel(status: string | null | undefined, announcementTy
   const stageCode = getCode(announcementType);
   if (ANNOUNCEMENT_STAGE_LABELS[stageCode]) {
     return ANNOUNCEMENT_STAGE_LABELS[stageCode];
+  }
+  if (stageCode.includes('ประกาศเชิญชวน')) {
+    return ANNOUNCEMENT_STAGE_LABELS.D0;
+  }
+  if (stageCode.includes('ยกเลิก')) {
+    return ANNOUNCEMENT_STAGE_LABELS.D1;
   }
   const key = getStatusKey(status, announcementType);
   return STATUS_LABELS[key] || key;

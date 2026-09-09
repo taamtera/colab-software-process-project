@@ -20,6 +20,7 @@ import { SoftwareHouseProfileModal } from '@/components/SoftwareHouseProfileModa
 import { RecommendationView } from '@/components/RecommendationView';
 import { NotificationToast } from '@/components/NotificationToast';
 import { getStageCode } from '@/lib/torPresentation';
+import { getAnnouncementStage } from '@/lib/torPresentation';
 import { 
   Sparkles, 
   Layers, 
@@ -105,7 +106,7 @@ export default function Home() {
   // Filter State
   const [filters, setFilters] = useState<FilterState>({
     searchQuery: '',
-    category: 'All Categories',
+    department: 'All Departments',
     minPrice: 0,
     maxPrice: 50000000,
     minMatchScore: 0,
@@ -151,12 +152,15 @@ export default function Home() {
         const query = filters.searchQuery.toLowerCase();
         const matchesTitle = contract.title.toLowerCase().includes(query);
         const matchesOwner = contract.contractOwner.toLowerCase().includes(query);
+        const matchesDepartmentId = (contract.departmentId || '').toLowerCase().includes(query);
+        const matchesDepartmentName = (contract.departmentName || '').toLowerCase().includes(query);
         const matchesDesc = contract.description.toLowerCase().includes(query);
         const matchesProps = contract.properties.some(p => p.property.toLowerCase().includes(query));
-        if (!matchesTitle && !matchesOwner && !matchesDesc && !matchesProps) return false;
+        const matchesStage = getAnnouncementStage(contract.announcementType).toLowerCase().includes(query);
+        if (!matchesTitle && !matchesOwner && !matchesDepartmentId && !matchesDepartmentName && !matchesDesc && !matchesProps && !matchesStage) return false;
       }
 
-      if (filters.category !== 'All Categories' && contract.category !== filters.category) {
+      if (filters.department !== 'All Departments' && contract.departmentId !== filters.department) {
         return false;
       }
 
@@ -202,7 +206,7 @@ export default function Home() {
   const handleResetFilters = () => {
     setFilters({
       searchQuery: '',
-      category: 'All Categories',
+      department: 'All Departments',
       minPrice: 0,
       maxPrice: 50000000,
       minMatchScore: 0,

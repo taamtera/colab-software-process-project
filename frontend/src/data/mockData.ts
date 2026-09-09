@@ -229,12 +229,18 @@ export const BANGKOK_DISTRICTS = [
   'Don Mueang'
 ];
 
-export const TOR_CATEGORIES = [
-  'All Categories',
-  'e-Bidding (ประกวดราคาอิเล็กทรอนิกส์)',
-  'Consulting (จ้างที่ปรึกษา)',
-  'IT & Software (เทคโนโลยีและซอฟต์แวร์)',
-  'General Services (จ้างเหมาบริการ)',
-  'Specific Selection (วิธีเฉพาะเจาะจง)'
+export const EGP_DEPARTMENTS = [
+  { deptId: '0806', name: 'กรมทางหลวง' },
+  { deptId: '0807', name: 'กรมทางหลวงชนบท' },
+  { deptId: '0703', name: 'กรมชลประทาน' },
+  { deptId: '1507', name: 'กรมโยธาธิการและผังเมือง' },
+  { deptId: '1508', name: 'กรมส่งเสริมการปกครองท้องถิ่น' },
+  { deptId: '0204', name: 'กองทัพบก' },
+  { deptId: '0205', name: 'กองทัพเรือ' },
+  { deptId: '0206', name: 'กองทัพอากาศ' },
+  { deptId: '0208', name: 'กองบัญชาการกองทัพไทย' },
+  { deptId: '0805', name: 'กรมท่าอากาศยาน' },
+  { deptId: '0803', name: 'กรมเจ้าท่า' },
+  { deptId: '0307', name: 'กรมสรรพากร' }
 ];
 
