@@ -5,7 +5,8 @@ Author: taam
 ## What Is Ready
 
 - MongoDB Atlas connection and environment configuration
-- 17 collections with validation rules and indexes
+- 18 collections with validation rules and indexes
+- controlled TOR and company profile tagging with aliases and review metadata
 - schema and indexes ready for live ingestion
 - optional non-RSS demo seed data
 - isolated crawler staging and ingestion history
@@ -86,6 +87,15 @@ Set `expiresAt` only when the team has approved a retention date. Omit it for re
 - Store notification delivery failures as `deliveryError.code`, `deliveryError.message`, and `deliveryError.lastAttemptAt`.
 - Query ready work using `status + nextAttemptAt`; do not scan the complete collection.
 
+## Tagging Contract
+
+- Use only active records from `tags`; do not save arbitrary free-text tags on TORs or companies.
+- Normalize aliases to their canonical `tagId` before assigning them.
+- TOR tags use `required`, `preferred`, or `informational` requirement levels.
+- Company tags use `claimed`, `experienced`, or `verified` verification levels.
+- Keep AI/crawler suggestions as `suggested` until a permitted user approves them.
+- Never delete a tag that is referenced by records; set its status to `inactive`.
+
 ## Environment Safety
 
 | Environment | Database | Purpose |
@@ -118,7 +128,7 @@ Never share `.env`, `node_modules/`, personal Atlas passwords, raw access tokens
 
 - `npm run handoff:verify` passes.
 - `npm run db:check` connects using the teammate's own credentials.
-- `npm run db:verify` reports all 17 collections and passes.
+- `npm run db:verify` reports all 18 collections and passes.
 - Authentication code uses hashes and the documented status values.
 - AI and notification workers use the documented retry fields and ready-work indexes.
 - Ingestion writes only to the approved database configured by `MONGODB_DB_NAME`.

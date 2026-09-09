@@ -1,5 +1,6 @@
 import { getDatabase } from '../config/database.mjs';
 import { toObjectId } from '../utils/object-id.mjs';
+import { assertActiveTagIds } from './tag.repository.mjs';
 
 function tors() {
   return getDatabase().collection('tor_announcements');
@@ -13,6 +14,7 @@ export async function listTors({
   search = null,
   status = 'open',
   category = null,
+  tagIds = [],
   sourceId = null,
   organizationId = null,
   minBudget = null,
@@ -35,6 +37,17 @@ export async function listTors({
 
   if (category) {
     filter.category = category;
+  }
+
+  if (tagIds.length > 0) {
+    filter.tagAssignments = {
+      $all: tagIds.map((tagId) => ({
+        $elemMatch: {
+          tagId: toObjectId(tagId, 'tagId'),
+          reviewStatus: 'approved'
+        }
+      }))
+    };
   }
 
   if (sourceId) {
@@ -80,5 +93,27 @@ export async function listTors({
       totalPages: Math.ceil(total / safeLimit)
     }
   };
+}
+
+export async function replaceTorTagAssignments(torId, assignments, reviewedByUserId) {
+  const objectIds = await assertActiveTagIds(assignments.map(({ tagId }) => tagId));
+  const now = new Date();
+  const tagAssignments = assignments.map((assignment, index) => ({
+    tagId: objectIds[index],
+    requirementLevel: assignment.requirementLevel,
+    source: 'manual',
+    confidence: 1,
+    reviewStatus: 'approved',
+    evidence: assignment.evidence,
+    reviewedByUserId: toObjectId(reviewedByUserId, 'reviewedByUserId'),
+    reviewedAt: now,
+    assignedAt: now
+  }));
+
+  return tors().findOneAndUpdate(
+    { _id: toObjectId(torId, 'torId') },
+    { $set: { tagAssignments, updatedAt: now } },
+    { returnDocument: 'after' }
+  );
 }
 

@@ -24,6 +24,7 @@ const requiredCollections = [
   'sessions',
   'audit_logs',
   'companies',
+  'tags',
   'ai_evaluations',
   'company_matches',
   'saved_tors',
@@ -38,6 +39,7 @@ const expectedRequiredFields = {
   ingestion_runs: ['sourceId', 'fetchedAt', 'request', 'reportedCount', 'itemsReceived', 'complete'],
   rss_query_state: ['queryKey', 'reportedCount', 'itemsReceived', 'complete', 'splitLevel', 'status', 'retryCount', 'lastCheckedAt'],
   users: ['notificationPreferences'],
+  tags: ['name', 'normalizedName', 'slug', 'category', 'aliases', 'status'],
   ai_evaluations: ['retryCount', 'lastAttemptAt', 'nextAttemptAt', 'lastError'],
   notifications: ['attemptCount', 'nextAttemptAt', 'deliveryError']
 };
@@ -58,11 +60,13 @@ const expectedNestedRequiredFields = {
 const expectedIndexes = {
   organizations: ['ix_organizations_ancestors'],
   procurement_projects: ['uq_projects_source_external'],
-  tor_announcements: ['uq_rss_tors_source_url', 'tx_rss_tors_discovery'],
   ingestion_runs: ['ix_rss_ingestion_source_fetched'],
   raw_ingestion_items: ['ttl_raw_ingestion_expiry'],
   rss_query_state: ['uq_rss_query_source_key', 'ix_rss_query_retry_queue'],
   audit_logs: ['ttl_audit_expiry'],
+  tags: ['uq_tags_category_name', 'uq_tags_slug', 'ix_tags_category_status_name', 'ix_tags_aliases'],
+  companies: ['ix_companies_tags_verification'],
+  tor_announcements: ['uq_rss_tors_source_url', 'tx_rss_tors_discovery', 'ix_rss_tors_tags_level'],
   ai_evaluations: ['uq_ai_tor_version', 'ix_ai_queue_ready'],
   company_matches: ['uq_matches_company_tor_version'],
   saved_tors: ['uq_saved_user_tor'],

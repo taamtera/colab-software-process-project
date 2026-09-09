@@ -63,6 +63,44 @@ try {
     }
   );
 
+  const tagSamples = [
+    { name: 'Node.js', normalizedName: 'node.js', slug: 'nodejs', category: 'technology', aliases: ['NodeJS', 'Node JS'] },
+    { name: 'MongoDB', normalizedName: 'mongodb', slug: 'mongodb', category: 'technology', aliases: ['Mongo DB'] },
+    { name: 'Docker', normalizedName: 'docker', slug: 'docker', category: 'technology', aliases: [] },
+    { name: 'ISO 27001', normalizedName: 'iso 27001', slug: 'iso-27001', category: 'certification', aliases: ['ISO/IEC 27001'] },
+    { name: 'Microservices', normalizedName: 'microservices', slug: 'microservices', category: 'capability', aliases: ['Microservice Architecture'] },
+    { name: 'Web Development', normalizedName: 'web development', slug: 'web-development', category: 'project_type', aliases: ['Web Application'] }
+  ];
+  const tagIds = {};
+
+  for (const tag of tagSamples) {
+    tagIds[tag.slug] = await upsertAndGetId(database.collection('tags'), { slug: tag.slug }, {
+      ...tag,
+      description: null,
+      status: 'active',
+      createdByUserId: null
+    });
+  }
+
+  const companyTagAssignments = [
+    ['nodejs', 'experienced'],
+    ['mongodb', 'experienced'],
+    ['docker', 'experienced'],
+    ['iso-27001', 'verified'],
+    ['microservices', 'verified'],
+    ['web-development', 'experienced']
+  ].map(([slug, verificationLevel]) => ({
+    tagId: tagIds[slug],
+    source: 'manual',
+    confidence: 1,
+    verificationLevel,
+    reviewStatus: 'approved',
+    evidence: null,
+    reviewedByUserId: null,
+    reviewedAt: now,
+    assignedAt: now
+  }));
+
   const companyId = await upsertAndGetId(
     database.collection('companies'),
     { taxId: 'DEMO-0105566123456' },
@@ -78,6 +116,7 @@ try {
         { code: 'ISO-27001', name: 'ISO 27001 Information Security Certified', category: 'certification', verified: true, evidenceUrl: null },
         { code: 'MICROSERVICES', name: 'Node.js and Microservices Architecture', category: 'capability', verified: true, evidenceUrl: null }
       ],
+      tagAssignments: companyTagAssignments,
       ownerUserId: null,
       memberUserIds: [],
       profileCompleteness: 92,
