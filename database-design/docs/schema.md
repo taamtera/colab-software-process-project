@@ -14,6 +14,8 @@ erDiagram
     TOR_ANNOUNCEMENTS ||--o{ TOR_VERSIONS : preserves
     TOR_ANNOUNCEMENTS ||--o{ AI_EVALUATIONS : analyzed_by
     COMPANIES ||--o{ USERS : includes
+    TAGS ||--o{ COMPANIES : classifies
+    TAGS ||--o{ TOR_ANNOUNCEMENTS : classifies
     USERS ||--o{ AUTH_TOKENS : receives
     USERS ||--o{ SESSIONS : opens
     USERS ||--o{ AUDIT_LOGS : generates
@@ -228,8 +230,23 @@ Important fields:
 - `qualifications`: certification, capability, and experience evidence
 - `profileCompleteness`: matching-readiness percentage
 - `verificationStatus`: `unverified`, `pending`, `verified`, or `rejected`
+- `tagAssignments`: controlled capability tags with provenance, confidence, verification level, review status, and optional evidence
 
-## 14. `ai_evaluations`
+## 14. `tags`
+
+Stores the canonical vocabulary used by search, profile review, and matching.
+
+Important fields:
+
+- `name` and `normalizedName`: display and duplicate-check forms
+- `slug`: stable API identifier
+- `category`: `technology`, `skill`, `certification`, `industry`, `project_type`, `capability`, or `requirement`
+- `aliases`: alternative spellings such as `NodeJS` and `Node JS`
+- `status`: `active` or `inactive`; deactivate used tags instead of deleting them
+
+TOR and company records reference tags using `tagAssignments`. TOR assignments classify a tag as `required`, `preferred`, or `informational`. Company assignments classify evidence as `claimed`, `experienced`, or `verified`. Every assignment records its source, confidence, and review status so AI suggestions cannot silently become verified facts.
+
+## 15. `ai_evaluations`
 
 Stores AI-derived information separately from official source facts.
 
@@ -246,7 +263,7 @@ Important fields:
 
 Every AI statement should include evidence text or a page reference when possible. The UI must label this information as AI-generated.
 
-## 15. `company_matches`
+## 16. `company_matches`
 
 Stores the evaluated relationship between one company and one TOR version.
 
@@ -259,7 +276,7 @@ Important fields:
 - `strengths`, `gaps`, and `explanation`
 - `computedAt`
 
-## 16. `saved_tors`
+## 17. `saved_tors`
 
 Stores one bookmark per user and TOR.
 
@@ -270,7 +287,7 @@ Important fields:
 - `followUpStatus`: `watching`, `reviewing`, `preparing_bid`, `submitted`, or `dismissed`
 - `createdAt` and `updatedAt`
 
-## 17. `notifications`
+## 18. `notifications`
 
 Tracks in-app and email alerts.
 
@@ -291,12 +308,12 @@ Workers should query queued or failed records using the `status + nextAttemptAt`
 
 | Product feature | Main collections |
 | --- | --- |
-| Dashboard, search, and filters | `tor_announcements`, `sources`, `organizations` |
+| Dashboard, search, and filters | `tor_announcements`, `sources`, `organizations`, `tags` |
 | Five-source crawler | `sources`, `procurement_projects`, `ingestion_runs`, `tor_announcements`, `tor_versions`, `rss_query_state` |
 | Raw crawler validation and cleanup | `ingestion_runs`, `raw_ingestion_items` |
 | TOR details, PDF reader, source link | `tor_announcements`, `tor_versions` |
-| Company profile and qualifications | `companies`, `users` |
+| Company profile and qualifications | `companies`, `users`, `tags` |
 | Registration, login, and account recovery | `users`, `auth_tokens`, `sessions`, `audit_logs` |
 | AI evaluation | `ai_evaluations`, `tor_announcements` |
-| Matching and recommendations | `company_matches`, `companies`, `ai_evaluations` |
+| Matching and recommendations | `company_matches`, `companies`, `ai_evaluations`, `tags` |
 | Saved TORs and notifications | `saved_tors`, `notifications` |
