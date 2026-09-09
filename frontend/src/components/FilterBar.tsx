@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { FilterState } from '@/types';
-import { BANGKOK_DISTRICTS, TOR_CATEGORIES } from '@/data/mockData';
+import { TOR_CATEGORIES } from '@/data/mockData';
 import { SlidersHorizontal, ChevronDown, Search, RefreshCw } from 'lucide-react';
 
 interface FilterBarProps {
@@ -112,22 +112,24 @@ export const FilterBar: React.FC<FilterBarProps> = ({
           </div>
         </div>
 
-        {/* Dropdown 3: Bangkok District / Location */}
+        {/* Dropdown 3: Status Filter */}
         <div className="relative">
           <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1.5 font-medium">
-            เขตพื้นที่ในกรุงเทพฯ (Bangkok District)
+            สถานะประกาศ (Tender Status)
           </label>
           <div className="relative">
             <select
-              value={filters.district}
-              onChange={(e) => setFilters(prev => ({ ...prev, district: e.target.value }))}
+              value={filters.status}
+              onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
               className="w-full appearance-none theme-input rounded-xl px-4 py-2 text-xs focus:outline-none transition-all cursor-pointer pr-10"
             >
-              {BANGKOK_DISTRICTS.map((dist) => (
-                <option key={dist} value={dist} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
-                  {dist}
-                </option>
-              ))}
+              <option value="All" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">ทั้งหมด (ทุกสถานะ)</option>
+              <option value="open" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Open (เปิดรับข้อเสนอ)</option>
+              <option value="Under AI Review" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Under AI Review (อยู่ระหว่างวิเคราะห์)</option>
+              <option value="Matched" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Matched (ตรงคุณสมบัติ)</option>
+              <option value="closed" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Closed (ปิดรับแล้ว)</option>
+              <option value="cancelled" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Cancelled (ยกเลิก)</option>
+              <option value="awarded" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Awarded (ประกาศผล)</option>
             </select>
             <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
           </div>

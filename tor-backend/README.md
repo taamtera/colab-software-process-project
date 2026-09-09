@@ -38,8 +38,11 @@ The frontend reads TOR announcements through the Express API. Dates in responses
 - `GET /api/tors`: list TOR announcements. Supports `search`, `status`, `category`, `tagIds`, `sourceId`, `organizationId`, `minBudget`, `maxBudget`, `deadlineAfter`, `page`, and `limit` query parameters. `tagIds` accepts either a comma-separated list or repeated query parameters.
 - `GET /api/tors/:torId`: read one TOR announcement by MongoDB ObjectId.
 - `PATCH /api/tors/:torId`: update editable TOR fields. Requires `project_manager` or `system_admin` authentication.
+- `GET /api/thumbnail/:templateId`: stream a stored WebP thumbnail from the `thumbnails` collection. Returns `404` when no image exists and never returns the stored Base64 value as JSON.
 
-The update body may contain `title`, `description`, `summary`, `category`, `publishedAt`, `submissionDeadline`, `projectStartAt`, `projectEndAt`, `sourceUrl`, `url`, `status`, and `budget`. Dates must be ISO date strings, `status` must be `draft`, `open`, `closed`, `cancelled`, or `awarded`, and unknown fields are rejected. The API records `updatedAt` and `updatedByUserId` automatically.
+The TOR list/detail responses include `templateId`, `projectId`, `title`, `departmentId`, `departmentName`, `publishedAt`, `procurementMethod`, `announcementType`, `url`, `documentUrl`, `thumbnail`, and `status`. Missing legacy fields are returned as `null`; when a `templateId` exists, `thumbnail` points to the backend thumbnail route so the frontend can fall back if that route returns `404`.
+
+The update body may contain `title`, `description`, `summary`, `category`, `departmentName`, `publishedAt`, `submissionDeadline`, `projectStartAt`, `projectEndAt`, `sourceUrl`, `url`, `documentUrl`, `thumbnail`, `status`, and `budget`. Dates must be ISO date strings, `status` must be `draft`, `open`, `closed`, `cancelled`, or `awarded`, and unknown fields are rejected. The API records `updatedAt` and `updatedByUserId` automatically.
 
 Successful list responses use this shape:
 

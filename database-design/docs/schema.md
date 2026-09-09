@@ -73,38 +73,185 @@ The unique project identity is `sourceId + externalProjectId`.
 
 ## 4. `tor_announcements`
 
-For the current RSS-only crawler stage, this collection stores the simplified feed item before any later normalization into the full TOR model.
+Stores procurement announcement publications ingested from public procurement portals.
 
-Stores one announcement or publication, not the whole procurement project. The latest normalized state is used by the dashboard, search, filters, TOR detail page, and recommendations.
+In the current live system (verified against 70 live documents in MongoDB Atlas from `sourceId: "EGP"`), this collection stores the **Live RSS Ingestion Document Model**. In a subsequent processing stage, these records can be extended into the **Normalized TOR Model** for enriched full-text search, detailed organization hierarchies, and AI matching.
 
-RSS-stage fields:
+### Live Ingestion Schema (Current Atlas Database)
 
-- `sourceId`, `departmentId`, `projectId`, and `templateId`
-- `title`, `description`, `publishedAt`, and `url`
-- `procurementMethod` and `announcementType`
-- `channelParams` and `itemParams`
-- `firstSeenAt` and `lastSeenAt`
+Every document ingested by the RSS crawler contains the following fields:
 
-The later normalized TOR model may add the following fields:
+| Field | BSON Type | Nullable | Description & Live Examples |
+| --- | --- | --- | --- |
+| `_id` | `ObjectId` | No | Unique MongoDB document identifier. |
+| `sourceId` | `string` | No | Originating source code (e.g., `"EGP"`). |
+| `departmentId` | `string` | Yes | Source department code (e.g., `"0307"` for Thai Revenue Department / กรมสรรพากร). |
+| `projectId` | `string` | Yes | Source procurement project identifier (e.g., `"69089624058"`). Not unique alone because one project can produce multiple announcements. |
+| `templateId` | `string` | Yes | UUID identifier used by e-GP PDF download service (e.g., `"80c0d1e8-e215-41ad-8eb5-c03c33bce482"`). Set to `null` when the source link points to a legacy web/JSP query rather than a template PDF. |
+| `title` | `string` | No | Thai announcement headline (e.g., `"ประกวดราคาจ้างเหมาบริการทำความสะอาด-ทำสวน ของสำนักงานสรรพากรพื้นที่ตาก..."`). Min length: 3 chars. |
+| `description` | `string` | Yes | Formatted summary snippet from the RSS feed, typically matching `"${projectId}, ${procurementMethod}, ${announcementType}"`. |
+| `publishedAt` | `string` \| `date` | Yes | Publication date. Currently stored as an ISO date string (`"YYYY-MM-DD"`, e.g., `"2026-09-02"`). |
+| `url` | `string` | No | Verification link pointing to the PDF document or legacy search result page. Min length: 8 chars. |
+| `procurementMethod` | `string` \| `object` | Yes | Procurement method name in Thai (e.g., `"ประกวดราคาอิเล็กทรอนิกส์ (e-bidding)"` or `"จ้างที่ปรึกษาโดยวิธีประกาศเชิญชวนทั่วไป"`). |
+| `announcementType` | `string` \| `object` | Yes | Announcement type in Thai (e.g., `"ประกาศเชิญชวน"`). |
+| `channelParams` | `object` | No | RSS channel query parameters captured during crawl (`homeflag`, `proc_id`, `servlet`, `methodId`, `announceType`). |
+| `itemParams` | `object` | No | Source URL query parameters. Varies by announcement link type (see Item Parameter Variants below). |
+| `tagAssignments` | `array` | Yes | Controlled tags assigned to the announcement. Each element contains `tagId`, `requirementLevel` (`required`, `preferred`, `informational`), `source` (`manual`, `ai`, `crawler`), `confidence` (0–1), `reviewStatus` (`suggested`, `approved`, `rejected`), `evidence`, `reviewedByUserId`, `reviewedAt`, and `assignedAt`. |
+| `firstSeenAt` | `string` \| `date` | No | Timestamp when the crawler first captured this announcement (e.g., `"2026-09-02T19:05:38.161Z"`). |
+| `lastSeenAt` | `string` \| `date` | No | Timestamp when the crawler last observed this announcement in the source feed (e.g., `"2026-09-02T19:05:38.161Z"`). |
+| `updatedAt` | `date` | Yes | Timestamp of the last backend modification (e.g. tag assignments or administrative edits). |
+| `updatedByUserId` | `ObjectId` | Yes | Reference to the user who performed the last modification. |
 
-- `sourceId`: publishing source
-- `procurementProjectId`: parent procurement project reference
-- `announcementKey`: deterministic key derived from source announcement identifiers; do not use RSS `guid`
-- `externalProjectId`, `templateType`, `tempAnnoun`, `tempItemNo`, and `seqNo`: source identifiers retained as strings
-- `title`, `summary`, `category`, and `keywords`: searchable data
-- `organization`: bounded display snapshot containing `organizationId`, optional external ID, Thai and English names, organization type, ancestor IDs, and optional purchasing-unit name
-- `announcementType` and `procurementMethod`: source code and display name
-- `budget`: amount or range in THB and source text
-- `publishedAt`, `submissionDeadline`, `projectStartAt`, `projectEndAt`
-- `sourceUrl`: original verification link
-- `documents`: PDF metadata and storage locations
-- `status`: `draft`, `open`, `closed`, `cancelled`, or `awarded`
-- `version` and `contentHash`: change tracking
-- `firstSeenAt` and `lastSeenAt`: crawler monitoring
+#### Item Parameter Variants (`itemParams`)
 
-The unique announcement identity is `sourceId + announcementKey`. `projectId` alone is not unique because one project can have many announcements.
+Analysis of live database records reveals two structural variants in `itemParams`:
 
-Do not store large PDF binary data in this collection. Store files in Google Cloud Storage and retain metadata such as `sourceUrl`, `storageUrl`, `checksum`, `mimeType`, `pageCount`, and `fileSizeBytes`.
+1. **Standard Template PDF (Direct View Service)**:
+   For e-bidding announcements where `url` points to `egp-template-service/dwnt/view-pdf-file`:
+   ```json
+   {
+     "templateId": "80c0d1e8-e215-41ad-8eb5-c03c33bce482"
+   }
+   ```
+2. **Legacy Web / JSP Search Result**:
+   For consultancy or non-template announcements where `url` points to `egp2procmainWeb/jsp/procsearch.sch`:
+   ```json
+   {
+     "servlet": "gojsp",
+     "proc_id": "ShowHTMLFile",
+     "processFlows": "Procure",
+     "projectId": "69089266414",
+     "templateType": "D2",
+     "temp_Announ": "A",
+     "temp_itemNo": "0",
+     "seqNo": "0"
+   }
+   ```
+
+#### Live Database Sample Documents
+
+##### Variant 1: e-Bidding with Direct PDF Template
+```json
+{
+  "_id": { "$oid": "6a9878268e3677918f092998" },
+  "sourceId": "EGP",
+  "departmentId": "0307",
+  "projectId": "69089624058",
+  "templateId": "80c0d1e8-e215-41ad-8eb5-c03c33bce482",
+  "title": "ประกวดราคาจ้างเหมาบริการทำความสะอาด-ทำสวน ของสำนักงานสรรพากรพื้นที่ตาก และทำความสะอาดสำนักงานสรรพากรพื้นที่สาขาในสังกัด ในปีงบประมาณ พ.ศ. 2570 ด้วยวิธีประกวดราคาอิเล็กทรอนิกส์ (e-bidding)",
+  "description": "69089624058, ประกวดราคาอิเล็กทรอนิกส์ (e-bidding), ประกาศเชิญชวน",
+  "publishedAt": "2026-09-02",
+  "url": "https://process5.gprocurement.go.th/egp-template-service/dwnt/view-pdf-file?templateId=80c0d1e8-e215-41ad-8eb5-c03c33bce482",
+  "procurementMethod": "ประกวดราคาอิเล็กทรอนิกส์ (e-bidding)",
+  "announcementType": "ประกาศเชิญชวน",
+  "channelParams": {
+    "homeflag": "A",
+    "proc_id": "FPRO9965",
+    "servlet": "FPRO9965Servlet",
+    "methodId": "",
+    "announceType": "2"
+  },
+  "itemParams": {
+    "templateId": "80c0d1e8-e215-41ad-8eb5-c03c33bce482"
+  },
+  "firstSeenAt": "2026-09-02T19:05:38.161Z",
+  "lastSeenAt": "2026-09-02T19:05:38.161Z"
+}
+```
+
+##### Variant 2: General Consultation with HTML/JSP Parameter Bag
+```json
+{
+  "_id": { "$oid": "6a9ef4b769505e45e1c7fa9c" },
+  "sourceId": "EGP",
+  "departmentId": "0307",
+  "projectId": "69089266414",
+  "templateId": null,
+  "title": "จ้างที่ปรึกษาโครงการจ้างที่ปรึกษาการจัดทำระบบบริหารด้านการให้บริการและด้านความมั่นคงปลอดภัยสารสนเทศของศูนย์ปฏิบัติการเครือข่ายสื่อสาร กรมสรรพากร และศูนย์ปฏิบัติการความมั่นคงปลอดภัยและเฝ้าระวังความมั่นคงปลอดภัยสารสนเทศ กรมสรรพากร โดยวิธีประกาศเชิญชวนทั่วไป",
+  "description": "69089266414, จ้างที่ปรึกษาโดยวิธีประกาศเชิญชวนทั่วไป, ประกาศเชิญชวน",
+  "publishedAt": "2026-09-07",
+  "url": "http://process.gprocurement.go.th/egp2procmainWeb/jsp/procsearch.sch?servlet=gojsp&proc_id=ShowHTMLFile&processFlows=Procure&projectId=69089266414&templateType=D2&temp_Announ=A&temp_itemNo=0&seqNo=0",
+  "procurementMethod": "จ้างที่ปรึกษาโดยวิธีประกาศเชิญชวนทั่วไป",
+  "announcementType": "ประกาศเชิญชวน",
+  "channelParams": {
+    "homeflag": "A",
+    "proc_id": "FPRO9965",
+    "servlet": "FPRO9965Servlet",
+    "methodId": "",
+    "announceType": "2"
+  },
+  "itemParams": {
+    "servlet": "gojsp",
+    "proc_id": "ShowHTMLFile",
+    "processFlows": "Procure",
+    "projectId": "69089266414",
+    "templateType": "D2",
+    "temp_Announ": "A",
+    "temp_itemNo": "0",
+    "seqNo": "0"
+  },
+  "firstSeenAt": "2026-09-07T17:30:31.393Z",
+  "lastSeenAt": "2026-09-07T17:30:31.393Z"
+}
+```
+
+### Active Database Indexes
+
+The `tor_announcements` collection in MongoDB Atlas maintains the following 8 indexes:
+
+1. `_id_`: Default unique primary key on `{ _id: 1 }`.
+2. `uq_rss_tors_source_url`: **Unique** compound index on `{ sourceId: 1, url: 1 }` preventing duplicate feed item ingestion.
+3. `ix_rss_tors_source_published`: Compound index on `{ sourceId: 1, publishedAt: -1 }` for source feed chronological ordering.
+4. `ix_rss_tors_department_published`: Compound index on `{ departmentId: 1, publishedAt: -1 }` for departmental filtering.
+5. `ix_rss_tors_type_published`: Compound index on `{ announcementType: 1, publishedAt: -1 }` for announcement category queries.
+6. `ix_rss_tors_method_published`: Compound index on `{ procurementMethod: 1, publishedAt: -1 }` for procurement method filters.
+7. `tx_rss_tors_discovery`: Text index on `{ title: "text", description: "text" }` with weights `{ title: 10, description: 2 }`, `default_language: "none"`, and `language_override: "language"` for keyword searches.
+8. `ix_rss_tors_tags_level`: Compound index on `{ "tagAssignments.tagId": 1, "tagAssignments.requirementLevel": 1 }` for capability and requirement tag matching.
+
+### Uniqueness & Identity Evolution
+
+- **Current Live RSS Stage**: The unique document identity is `sourceId + url`, enforced by `uq_rss_tors_source_url`. `projectId` alone is not unique because a single procurement project regularly issues multiple announcements (e.g. preliminary draft TOR, public hearing, invitation, and amendment).
+- **Future Normalized Stage**: When cross-source normalization is active, deduplication will transition to `sourceId + announcementKey` (where `announcementKey` is deterministically derived from source identifiers such as `projectId + templateType + tempAnnoun + tempItemNo + seqNo`), insulating against fluctuating query parameters and session tokens in source URLs.
+
+### Future Normalized TOR Extension Fields
+
+The later normalized TOR model expands this collection with the following domain fields for downstream AI and matching services:
+
+- `procurementProjectId`: Parent procurement project reference (`ObjectId` linking to `procurement_projects`).
+- `announcementKey`: Deterministic key derived from source announcement identifiers.
+- `externalProjectId`, `templateType`, `tempAnnoun`, `tempItemNo`, and `seqNo`: Source identifiers retained as structured strings.
+- `summary`, `category`, and `keywords`: Processed full-text searchable data.
+- `organization`: Bounded display snapshot containing `organizationId`, optional external ID, Thai and English names, organization type, ancestor IDs, and optional purchasing-unit name.
+- `budget`: Structured amount or range in THB (`minAmount`, `maxAmount`) and source text representation.
+- `publishedAt`, `submissionDeadline`, `projectStartAt`, `projectEndAt`: Standardized BSON `date` timestamps.
+- `sourceUrl`: Original verification link.
+- `documents`: PDF metadata and storage locations (`sourceUrl`, `storageUrl`, `checksum`, `mimeType`, `pageCount`, `fileSizeBytes`).
+- `status`: `draft`, `open`, `closed`, `cancelled`, or `awarded`.
+- `version` and `contentHash`: Change tracking for version creation.
+
+> [!NOTE]
+> **PDF Storage Policy**: Do not store large PDF binary files directly in MongoDB documents. Store documents in Google Cloud Storage and maintain references and metadata in `documents`.
+
+### Current e-GP Thumbnail Fields
+
+- `departmentName`: agency display name captured with `departmentId`.
+- `documentUrl`: actual PDF or document URL when it differs from the announcement verification `url`.
+- `thumbnail`: backend route reference such as `/api/thumbnail/{templateId}`; it is never the Base64 image data.
+- `status`: `draft`, `open`, `closed`, `cancelled`, or `awarded`. Legacy records without this field are treated as open by the backend list API.
+
+## Thumbnail storage (`thumbnails`)
+
+Stores the generated first-page image separately from `tor_announcements`.
+
+Important fields:
+
+- `templateId`: unique e-GP template linkage to the TOR announcement.
+- `projectId`: optional source project identifier.
+- `contentType`: normally `image/webp`.
+- `data`: Base64-encoded image bytes; this field is served only through `GET /api/thumbnail/:templateId` and is never included in TOR JSON responses.
+- `sourceUrl`, `width`, `quality`, `size`, and `updatedAt`: generation and cache metadata.
+
+The backend returns `404` when a thumbnail is missing. Frontend cards and detail views must show a document placeholder in that case.
 
 ## 5. `tor_versions`
 

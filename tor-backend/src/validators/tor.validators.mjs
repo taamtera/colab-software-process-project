@@ -6,12 +6,15 @@ const UPDATE_FIELDS = [
   'description',
   'summary',
   'category',
+  'departmentName',
   'publishedAt',
   'submissionDeadline',
   'projectStartAt',
   'projectEndAt',
   'sourceUrl',
   'url',
+  'documentUrl',
+  'thumbnail',
   'status',
   'budget'
 ];
@@ -85,7 +88,7 @@ export function validateTorUpdate(body) {
   }
 
   const update = {};
-  for (const field of ['title', 'description', 'summary', 'category', 'sourceUrl', 'url']) {
+  for (const field of ['title', 'description', 'summary', 'category', 'departmentName', 'sourceUrl', 'url', 'documentUrl', 'thumbnail']) {
     if (body[field] !== undefined) {
       update[field] = optionalText(body[field], field);
     }

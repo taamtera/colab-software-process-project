@@ -3,6 +3,8 @@
 import React, { useState } from 'react';
 import { TORContract } from '@/types';
 import { PDFReader } from './PDFReader';
+import { PDFThumbnail } from './PDFThumbnail';
+import { getAnnouncementStage, getStatusLabel } from '@/lib/torPresentation';
 import { 
   X, 
   Download, 
@@ -51,17 +53,10 @@ export const TORDetailModal: React.FC<TORDetailModalProps> = ({
           {/* Top Section matching Desktop - 2 wireframe layout */}
           <div className="grid grid-cols-1 md:grid-cols-12 gap-5 bg-slate-50 dark:bg-slate-950/60 p-5 rounded-lg border border-slate-200 dark:border-slate-800">
             
-            {/* Left Image & Download Button */}
+            {/* Left PDF Preview & Download Button */}
             <div className="md:col-span-4 flex flex-col items-center gap-3">
-              <div className="w-full h-48 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 relative bg-slate-100 dark:bg-slate-800">
-                <img
-                  src={contract.thumbnail}
-                  alt={contract.title}
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute top-2 left-2 px-2.5 py-1 bg-slate-900/90 text-white text-xs font-semibold rounded-lg border border-slate-700">
-                  {contract.district}
-                </div>
+              <div className="w-full h-52 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800">
+                <PDFThumbnail contract={contract} className="w-full h-full" />
               </div>
 
               {/* Download Button matching wireframe 'download' below image */}
@@ -82,7 +77,7 @@ export const TORDetailModal: React.FC<TORDetailModalProps> = ({
                     {contract.category}
                   </span>
                   <span className="text-xs text-slate-500 dark:text-slate-400">
-                    Status: <span className="text-slate-700 dark:text-slate-300 font-semibold">{contract.status}</span>
+                    Status: <span className="text-slate-700 dark:text-slate-300 font-semibold">{getStatusLabel(contract.status, contract.announcementType)}</span>
                   </span>
                 </div>
 
@@ -94,8 +89,20 @@ export const TORDetailModal: React.FC<TORDetailModalProps> = ({
                 {/* contract owner name */}
                 <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 mb-3">
                   <Building2 className="w-4 h-4 shrink-0" />
-                  <span>{contract.contractOwner}</span>
+                  <span>{contract.departmentName || contract.contractOwner}</span>
                 </p>
+
+                <div className="flex flex-wrap gap-2 mb-3 text-xs">
+                  <span className="px-2 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                    {getAnnouncementStage(contract.announcementType)}
+                  </span>
+                  <span className="px-2 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                    Published: {contract.publishedAt || contract.postingDate}
+                  </span>
+                  <span className="px-2 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                    {typeof contract.procurementMethod === 'string' ? contract.procurementMethod : contract.category}
+                  </span>
+                </div>
 
                 {/* Date range: 22 may 2026 - 22 dec 2026 */}
                 <div className="flex flex-wrap items-center gap-4 text-xs text-slate-600 dark:text-slate-300 mb-4 bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-800">

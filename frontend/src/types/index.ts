@@ -19,25 +19,33 @@ export interface AIEvaluation {
 
 export interface TORContract {
   id: string;
+  templateId?: string | null;
+  projectId?: string | null;
   title: string;
   contractOwner: string; // Publisher / Organization
-  publisherType: 'BMA (กรุงเทพมหานคร)' | 'Ministry' | 'State Enterprise' | 'Public Organization';
-  district: string; // Bangkok District
+  departmentId?: string | null;
+  departmentName?: string | null;
+  publisherType: 'BMA (กรุงเทพมหานคร)' | 'Ministry' | 'State Enterprise' | 'Public Organization' | string;
   price: number; // THB
   priceFormatted: string;
   startDate: string;
   endDate: string;
   postingDate: string;
+  publishedAt?: string | null;
   submissionDeadline: string;
-  category: 'Smart City' | 'Web & Mobile' | 'Cloud & DevOps' | 'AI & Analytics' | 'Cybersecurity';
+  category: 'e-Bidding (ประกวดราคาอิเล็กทรอนิกส์)' | 'Consulting (จ้างที่ปรึกษา)' | 'IT & Software (เทคโนโลยีและซอฟต์แวร์)' | 'General Services (จ้างเหมาบริการ)' | 'Specific Selection (วิธีเฉพาะเจาะจง)' | string;
+  procurementMethod?: string | Record<string, unknown> | null;
+  announcementType?: string | Record<string, unknown> | null;
   description: string;
   properties: TORRequirement[];
   pdfUrl: string;
+  url?: string | null;
+  documentUrl?: string | null;
   pdfPagesCount: number;
   aiEvaluation: AIEvaluation;
-  status: 'Open for Bidding' | 'Under AI Review' | 'Matched' | 'Closed';
+  status: 'Open for Bidding' | 'Under AI Review' | 'Matched' | 'Closed' | string;
   matchedScore?: number;
-  thumbnail: string;
+  thumbnail?: string;
 }
 
 export interface SoftwareHouseProfile {
@@ -61,7 +69,6 @@ export interface SoftwareHouseProfile {
 export interface FilterState {
   searchQuery: string;
   category: string;
-  district: string;
   minPrice: number;
   maxPrice: number;
   minMatchScore: number;

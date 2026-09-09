@@ -1,4 +1,5 @@
 import { findTorById, listTors, updateTor } from '../repositories/tor.repository.mjs';
+import { serializeTor } from '../serializers/tor.serializer.mjs';
 import { httpError } from '../utils/http-error.mjs';
 import { validateTorUpdate } from '../validators/tor.validators.mjs';
 
@@ -7,7 +8,7 @@ export async function list(request, response) {
     ? (Array.isArray(request.query.tagIds) ? request.query.tagIds : request.query.tagIds.split(',')).filter(Boolean)
     : [];
   const result = await listTors({ ...request.query, tagIds });
-  response.json(result);
+  response.json({ ...result, items: result.items.map(serializeTor) });
 }
 
 export async function getById(request, response) {
@@ -15,7 +16,7 @@ export async function getById(request, response) {
   if (!tor) {
     throw httpError(404, 'TOR_NOT_FOUND', 'The TOR does not exist.');
   }
-  response.json({ tor });
+  response.json({ tor: serializeTor(tor) });
 }
 
 export async function update(request, response) {
@@ -24,5 +25,5 @@ export async function update(request, response) {
   if (!tor) {
     throw httpError(404, 'TOR_NOT_FOUND', 'The TOR does not exist.');
   }
-  response.json({ tor });
+  response.json({ tor: serializeTor(tor) });
 }

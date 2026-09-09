@@ -6,8 +6,8 @@ import {
   TORContract, 
   FilterState 
 } from '@/types';
-import { MOCK_TOR_CONTRACTS } from '@/data/mockData';
 import * as authApi from '@/lib/authApi';
+import * as torApi from '@/lib/torApi';
 import { safeUserToProfile } from '@/lib/userProfile';
 import { Header } from '@/components/Header';
 import { DashboardHero } from '@/components/DashboardHero';
@@ -19,12 +19,14 @@ import { AuthModal } from '@/components/AuthModal';
 import { SoftwareHouseProfileModal } from '@/components/SoftwareHouseProfileModal';
 import { RecommendationView } from '@/components/RecommendationView';
 import { NotificationToast } from '@/components/NotificationToast';
+import { getStatusKey } from '@/lib/torPresentation';
 import { 
   Sparkles, 
   Layers, 
   Bot, 
   CheckCircle2, 
-  Search
+  Search,
+  RefreshCw
 } from 'lucide-react';
 
 export default function Home() {
@@ -48,7 +50,32 @@ export default function Home() {
   // State Management
   const [activeTab, setActiveTab] = useState<'dashboard' | 'find' | 'recommendations' | 'profile'>('dashboard');
   const [currentUser, setCurrentUser] = useState<SoftwareHouseProfile | null>(null);
-  const [contracts, setContracts] = useState<TORContract[]>(MOCK_TOR_CONTRACTS);
+  const [contracts, setContracts] = useState<TORContract[]>([]);
+  const [isLoadingTors, setIsLoadingTors] = useState(true);
+  const [torLoadError, setTorLoadError] = useState<string | null>(null);
+  const [torRefreshKey, setTorRefreshKey] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    setIsLoadingTors(true);
+    setTorLoadError(null);
+
+    torApi
+      .listTors()
+      .then(({ items }) => {
+        if (!cancelled) setContracts(items);
+      })
+      .catch((error: Error) => {
+        if (!cancelled) setTorLoadError(error.message);
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoadingTors(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [torRefreshKey]);
 
   // Restore the session on load: if a valid auth cookie exists, the backend returns
   // the current user; otherwise stay logged out. Runs once on mount.
@@ -79,7 +106,6 @@ export default function Home() {
   const [filters, setFilters] = useState<FilterState>({
     searchQuery: '',
     category: 'All Categories',
-    district: 'All Districts',
     minPrice: 0,
     maxPrice: 50000000,
     minMatchScore: 0,
@@ -98,32 +124,25 @@ export default function Home() {
     setContracts(prevContracts => 
       prevContracts.map(contract => {
         let matchedCount = 0;
-        const updatedProps = contract.properties.map(req => {
-          const isFulfilled = currentUser.properties.some(userProp => 
-            userProp.toLowerCase().includes(req.category.toLowerCase()) ||
-            userProp.toLowerCase().includes('iso') ||
-            userProp.toLowerCase().includes('react') ||
-            userProp.toLowerCase().includes('cloud') ||
-            userProp.toLowerCase().includes('api') ||
-            userProp.toLowerCase().includes('big data')
-          );
-          if (isFulfilled) matchedCount++;
-          return { ...req, fulfilledBySoftwareHouse: isFulfilled };
+        contract.properties.forEach(prop => {
+          if (currentUser.properties.some(up => 
+            up.toLowerCase().includes(prop.property.toLowerCase()) || 
+            prop.property.toLowerCase().includes(up.toLowerCase())
+          )) {
+            matchedCount++;
+          }
         });
 
-        const matchPercentage = Math.min(
-          99,
-          Math.max(65, Math.round((matchedCount / contract.properties.length) * 40 + 58))
-        );
+        const totalProps = contract.properties.length || 1;
+        const calcScore = Math.min(99, Math.max(45, Math.round((matchedCount / totalProps) * 100)));
 
         return {
           ...contract,
-          properties: updatedProps,
-          matchedScore: matchPercentage
+          matchedScore: calcScore
         };
       })
     );
-  }, [currentUser?.properties]);
+  }, [currentUser]);
 
   // Filtered TOR Contracts
   const filteredContracts = useMemo(() => {
@@ -141,7 +160,7 @@ export default function Home() {
         return false;
       }
 
-      if (filters.district !== 'All Districts' && contract.district !== filters.district) {
+      if (filters.status !== 'All' && getStatusKey(contract.status, contract.announcementType) !== filters.status) {
         return false;
       }
 
@@ -184,7 +203,6 @@ export default function Home() {
     setFilters({
       searchQuery: '',
       category: 'All Categories',
-      district: 'All Districts',
       minPrice: 0,
       maxPrice: 50000000,
       minMatchScore: 0,
@@ -203,13 +221,19 @@ export default function Home() {
   };
 
   const handleDownloadPDF = (contract: TORContract) => {
+    const documentUrl = contract.documentUrl || contract.url || contract.pdfUrl;
+    if (documentUrl) {
+      window.open(documentUrl, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
     const textContent = `
 ============================================================
 ข้อกำหนดรายละเอียดและขอบเขตของงาน (TOR)
 ${contract.title}
 ============================================================
 ผู้ออกเอกสาร: ${contract.contractOwner}
-เขตพื้นที่: ${contract.district}, กรุงเทพมหานคร
+หมวดหมู่: ${contract.category}
 วงเงินงบประมาณ: ${contract.priceFormatted}
 ระยะเวลาสัญญา: ${contract.startDate} ถึง ${contract.endDate}
 กำหนดวันยื่นเอกสาร: ${contract.submissionDeadline}
@@ -300,7 +324,24 @@ ${contract.properties.map((p, i) => `${i + 1}. ${p.property}`).join('\n')}
                 </span>
               </div>
 
-              {filteredContracts.length > 0 ? (
+              {isLoadingTors ? (
+                <div className="theme-card p-10 text-center rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+                  <RefreshCw className="w-8 h-8 text-sky-600 animate-spin mx-auto mb-3" />
+                  <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">Loading live TOR announcements...</p>
+                </div>
+              ) : torLoadError ? (
+                <div className="theme-card p-8 text-center rounded-lg border border-rose-200 dark:border-rose-900/60 bg-white dark:bg-slate-900">
+                  <p className="text-sm font-semibold text-rose-700 dark:text-rose-300">Could not load live TOR announcements.</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">{torLoadError}</p>
+                  <button
+                    onClick={() => setTorRefreshKey((key) => key + 1)}
+                    className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900 text-xs font-semibold rounded-lg"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    Retry
+                  </button>
+                </div>
+              ) : filteredContracts.length > 0 ? (
                 <div className="space-y-4">
                   {filteredContracts.map((contract) => (
                     <TORCard

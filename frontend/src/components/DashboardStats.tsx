@@ -204,11 +204,11 @@ export const DashboardStats: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="theme-card p-5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
           <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
-            🏆 Top Performing District
+            🏆 Top Procurement Method
           </p>
-          <p className="text-xl font-bold text-slate-900 dark:text-white">Chatuchak</p>
+          <p className="text-xl font-bold text-slate-900 dark:text-white">e-Bidding (e-GP)</p>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            28 active TORs • ฿52.3M total
+            69 active TORs • ฿98.4M total
           </p>
         </div>
 

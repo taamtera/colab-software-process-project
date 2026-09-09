@@ -58,12 +58,16 @@ const collectionDefinitions = {
     properties: {
       sourceId: { bsonType: 'string', minLength: 1 },
       departmentId: { bsonType: ['string', 'null'] },
+      departmentName: { bsonType: ['string', 'null'] },
       projectId: { bsonType: ['string', 'null'] },
       templateId: { bsonType: ['string', 'null'] },
-      title: { bsonType: 'string', minLength: 3 },
+      title: { bsonType: ['string', 'null'], minLength: 3 },
       description: { bsonType: ['string', 'null'] },
       publishedAt: { bsonType: ['string', 'date', 'null'] },
-      url: { bsonType: 'string', minLength: 8 },
+      url: { bsonType: ['string', 'null'], minLength: 8 },
+      documentUrl: { bsonType: ['string', 'null'], minLength: 8 },
+      thumbnail: { bsonType: ['string', 'null'] },
+      status: { enum: ['draft', 'open', 'closed', 'cancelled', 'awarded'] },
       procurementMethod: { bsonType: ['string', 'object', 'null'] },
       announcementType: { bsonType: ['string', 'object', 'null'] },
       channelParams: { bsonType: 'object' },
@@ -88,6 +92,20 @@ const collectionDefinitions = {
       },
       firstSeenAt: { bsonType: ['string', 'date'] },
       lastSeenAt: { bsonType: ['string', 'date'] }
+    }
+  },
+  thumbnails: {
+    required: ['templateId', 'contentType', 'data', 'sourceUrl', 'width', 'quality', 'size', 'updatedAt'],
+    properties: {
+      templateId: { bsonType: 'string', minLength: 1 },
+      projectId: { bsonType: ['string', 'null'] },
+      contentType: { bsonType: 'string', minLength: 5 },
+      data: { bsonType: 'string', minLength: 1 },
+      sourceUrl: { bsonType: ['string', 'null'] },
+      width: { bsonType: ['int', 'long'], minimum: 1 },
+      quality: { bsonType: ['int', 'long'], minimum: 1, maximum: 100 },
+      size: { bsonType: ['int', 'long'], minimum: 1 },
+      updatedAt: { bsonType: ['string', 'date'] }
     }
   },
   tor_versions: {
@@ -412,13 +430,18 @@ const indexes = {
     [{ sourceId: 1, updatedAt: -1 }, { name: 'ix_projects_source_updated' }]
   ],
   tor_announcements: [
-    [{ sourceId: 1, url: 1 }, { unique: true, name: 'uq_rss_tors_source_url' }],
+    [{ templateId: 1 }, { unique: true, partialFilterExpression: { templateId: { $type: 'string' } }, name: 'uq_rss_tors_template' }],
+    [{ sourceId: 1, url: 1 }, { unique: true, partialFilterExpression: { url: { $type: 'string' } }, name: 'uq_rss_tors_source_url' }],
     [{ sourceId: 1, publishedAt: -1 }, { name: 'ix_rss_tors_source_published' }],
     [{ departmentId: 1, publishedAt: -1 }, { name: 'ix_rss_tors_department_published' }],
     [{ announcementType: 1, publishedAt: -1 }, { name: 'ix_rss_tors_type_published' }],
     [{ procurementMethod: 1, publishedAt: -1 }, { name: 'ix_rss_tors_method_published' }],
     [{ title: 'text', description: 'text' }, { default_language: 'none', weights: { title: 10, description: 2 }, name: 'tx_rss_tors_discovery' }],
     [{ 'tagAssignments.tagId': 1, 'tagAssignments.requirementLevel': 1 }, { name: 'ix_rss_tors_tags_level' }]
+  ],
+  thumbnails: [
+    [{ templateId: 1 }, { unique: true, name: 'uq_thumbnails_template' }],
+    [{ updatedAt: -1 }, { name: 'ix_thumbnails_updated' }]
   ],
   tor_versions: [
     [{ torId: 1, version: 1 }, { unique: true, name: 'uq_tor_versions_number' }],

@@ -8,6 +8,7 @@ import { authRouter } from './routes/auth.routes.mjs';
 import { healthRouter } from './routes/health.routes.mjs';
 import { tagRouter } from './routes/tag.routes.mjs';
 import { torRouter } from './routes/tor.routes.mjs';
+import { thumbnailRouter } from './routes/thumbnail.routes.mjs';
 
 export const app = express();
 
@@ -45,6 +46,7 @@ app.use('/api/health', healthRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/tags', tagRouter);
 app.use('/api/tors', torRouter);
+app.use('/api/thumbnail', thumbnailRouter);
 app.use(notFoundHandler);
 app.use(errorHandler);
 

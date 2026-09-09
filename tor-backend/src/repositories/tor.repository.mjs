@@ -47,7 +47,9 @@ export async function listTors({
   }
 
   if (status) {
-    filter.status = status;
+    filter.status = status === 'open'
+      ? { $in: ['open', null] }
+      : status;
   }
 
   if (category) {
@@ -66,7 +68,7 @@ export async function listTors({
   }
 
   if (sourceId) {
-    filter.sourceId = toObjectId(sourceId, 'sourceId');
+    filter.sourceId = sourceId;
   }
 
   if (organizationId) {
