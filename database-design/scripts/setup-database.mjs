@@ -68,6 +68,24 @@ const collectionDefinitions = {
       announcementType: { bsonType: ['string', 'object', 'null'] },
       channelParams: { bsonType: 'object' },
       itemParams: { bsonType: 'object' },
+      tagAssignments: {
+        bsonType: 'array',
+        items: {
+          bsonType: 'object',
+          required: ['tagId', 'requirementLevel', 'source', 'confidence', 'reviewStatus', 'assignedAt'],
+          properties: {
+            tagId: { bsonType: 'objectId' },
+            requirementLevel: { enum: ['required', 'preferred', 'informational'] },
+            source: { enum: ['manual', 'ai', 'crawler'] },
+            confidence: { bsonType: ['int', 'long', 'double'], minimum: 0, maximum: 1 },
+            reviewStatus: { enum: ['suggested', 'approved', 'rejected'] },
+            evidence: { bsonType: ['string', 'null'] },
+            reviewedByUserId: { bsonType: ['objectId', 'null'] },
+            reviewedAt: { bsonType: ['date', 'null'] },
+            assignedAt: { bsonType: 'date' }
+          }
+        }
+      },
       firstSeenAt: { bsonType: ['string', 'date'] },
       lastSeenAt: { bsonType: ['string', 'date'] }
     }
@@ -250,10 +268,43 @@ const collectionDefinitions = {
       contact: { bsonType: 'object' },
       technologies: { bsonType: 'array', items: { bsonType: 'string' } },
       qualifications: { bsonType: 'array', items: { bsonType: 'object' } },
+      tagAssignments: {
+        bsonType: 'array',
+        items: {
+          bsonType: 'object',
+          required: ['tagId', 'source', 'confidence', 'verificationLevel', 'reviewStatus', 'assignedAt'],
+          properties: {
+            tagId: { bsonType: 'objectId' },
+            source: { enum: ['manual', 'ai', 'crawler'] },
+            confidence: { bsonType: ['int', 'long', 'double'], minimum: 0, maximum: 1 },
+            verificationLevel: { enum: ['claimed', 'experienced', 'verified'] },
+            reviewStatus: { enum: ['suggested', 'approved', 'rejected'] },
+            evidence: { bsonType: ['string', 'null'] },
+            reviewedByUserId: { bsonType: ['objectId', 'null'] },
+            reviewedAt: { bsonType: ['date', 'null'] },
+            assignedAt: { bsonType: 'date' }
+          }
+        }
+      },
       ownerUserId: { bsonType: ['objectId', 'null'] },
       memberUserIds: { bsonType: 'array', items: { bsonType: 'objectId' } },
       profileCompleteness: { bsonType: ['int', 'long', 'double'], minimum: 0, maximum: 100 },
       verificationStatus: { enum: ['unverified', 'pending', 'verified', 'rejected'] },
+      createdAt: { bsonType: 'date' },
+      updatedAt: { bsonType: 'date' }
+    }
+  },
+  tags: {
+    required: ['name', 'normalizedName', 'slug', 'category', 'aliases', 'status', 'createdAt', 'updatedAt'],
+    properties: {
+      name: { bsonType: 'string', minLength: 2 },
+      normalizedName: { bsonType: 'string', minLength: 2 },
+      slug: { bsonType: 'string', pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$' },
+      category: { enum: ['technology', 'skill', 'certification', 'industry', 'project_type', 'capability', 'requirement'] },
+      aliases: { bsonType: 'array', items: { bsonType: 'string', minLength: 1 } },
+      description: { bsonType: ['string', 'null'] },
+      status: { enum: ['active', 'inactive'] },
+      createdByUserId: { bsonType: ['objectId', 'null'] },
       createdAt: { bsonType: 'date' },
       updatedAt: { bsonType: 'date' }
     }
@@ -366,7 +417,8 @@ const indexes = {
     [{ departmentId: 1, publishedAt: -1 }, { name: 'ix_rss_tors_department_published' }],
     [{ announcementType: 1, publishedAt: -1 }, { name: 'ix_rss_tors_type_published' }],
     [{ procurementMethod: 1, publishedAt: -1 }, { name: 'ix_rss_tors_method_published' }],
-    [{ title: 'text', description: 'text' }, { default_language: 'none', weights: { title: 10, description: 2 }, name: 'tx_rss_tors_discovery' }]
+    [{ title: 'text', description: 'text' }, { default_language: 'none', weights: { title: 10, description: 2 }, name: 'tx_rss_tors_discovery' }],
+    [{ 'tagAssignments.tagId': 1, 'tagAssignments.requirementLevel': 1 }, { name: 'ix_rss_tors_tags_level' }]
   ],
   tor_versions: [
     [{ torId: 1, version: 1 }, { unique: true, name: 'uq_tor_versions_number' }],
@@ -414,7 +466,14 @@ const indexes = {
   companies: [
     [{ taxId: 1 }, { unique: true, partialFilterExpression: { taxId: { $type: 'string' } }, name: 'uq_companies_tax_id' }],
     [{ verificationStatus: 1, profileCompleteness: -1 }, { name: 'ix_companies_verification_profile' }],
-    [{ technologies: 1 }, { name: 'ix_companies_technologies' }]
+    [{ technologies: 1 }, { name: 'ix_companies_technologies' }],
+    [{ 'tagAssignments.tagId': 1, verificationStatus: 1 }, { name: 'ix_companies_tags_verification' }]
+  ],
+  tags: [
+    [{ category: 1, normalizedName: 1 }, { unique: true, name: 'uq_tags_category_name' }],
+    [{ slug: 1 }, { unique: true, name: 'uq_tags_slug' }],
+    [{ category: 1, status: 1, name: 1 }, { name: 'ix_tags_category_status_name' }],
+    [{ aliases: 1 }, { name: 'ix_tags_aliases' }]
   ],
   ai_evaluations: [
     [{ torId: 1, torVersion: 1 }, { unique: true, name: 'uq_ai_tor_version' }],

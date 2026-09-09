@@ -8,6 +8,7 @@ It covers:
 - current TOR records and version history
 - source documents and original links
 - users, software-house profiles, and qualifications
+- controlled tags for TOR requirements and company capabilities
 - registration, verification tokens, login sessions, and security audit logs
 - AI requirement evaluation and company matching
 - saved TORs, recommendations, and notifications
@@ -24,6 +25,7 @@ It covers:
 | `sessions` | Hashed refresh sessions with expiration and revocation state |
 | `audit_logs` | Registration, login, password, status, and verification events |
 | `companies` | Software-house profile, technologies, and qualifications |
+| `tags` | Controlled tag names, categories, aliases, and lifecycle status |
 | `ai_evaluations` | AI-extracted TOR requirements and observations |
 | `company_matches` | Company-to-TOR compatibility scores and explanations |
 | `saved_tors` | User bookmarks and follow-up notes |

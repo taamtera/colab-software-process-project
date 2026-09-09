@@ -28,6 +28,16 @@ The frontend must never receive `MONGODB_URI` or connect directly to Atlas.
 - Safe 404 and server-error responses
 - Graceful server and database shutdown
 - Reusable repositories for users, secure tokens, sessions, audit logs, companies, and TOR discovery
+- Controlled tag catalog and reviewed TOR/company tag assignments
+
+## Tagging API
+
+- `GET /api/tags`: list active tags; accepts `category` and `search` query parameters
+- `POST /api/tags`: create a controlled tag; system administrator only
+- `PUT /api/tags/companies/:companyId`: replace a company's approved tags; company member or system administrator
+- `PUT /api/tags/tors/:torId`: replace a TOR's approved tags; project manager or system administrator
+
+Company updates are restricted to the authenticated user's own company unless the user is a system administrator. API assignments are manual and approved; future AI/crawler workers must save low-confidence suggestions as unapproved records.
 
 ## Authentication Ownership
 
