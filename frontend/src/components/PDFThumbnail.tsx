@@ -29,10 +29,10 @@ export const PDFThumbnail: React.FC<PDFThumbnailProps> = ({ contract, className 
           onError={() => setImageError(true)}
           className="w-full h-full object-cover group-hover/thumb:scale-105 transition-transform duration-300"
         />
-        {/* PDF Overlay Badge */}
-        <div className="absolute top-2 left-2 px-2 py-0.5 bg-red-600/90 text-white rounded text-[10px] font-bold tracking-wider flex items-center gap-1 shadow-sm">
+        {/* TOR status overlay */}
+        <div className={`absolute top-2 left-2 px-2 py-0.5 rounded border text-[10px] font-bold tracking-wider flex items-center gap-1 shadow-sm ${getStatusClasses(contract.status, contract.announcementType)}`}>
           <FileText className="w-2.5 h-2.5" />
-          <span>PDF</span>
+          <span>{getStatusLabel(contract.status, contract.announcementType)}</span>
         </div>
 
         {contract.matchedScore && (

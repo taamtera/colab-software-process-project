@@ -32,13 +32,24 @@ function parseIntEnv(value, fallback) {
   return Number.isInteger(parsed) && parsed >= 0 ? parsed : fallback;
 }
 
+const configuredFrontendOrigins = (process.env.FRONTEND_ORIGIN || '')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+const localFrontendOrigins = [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://localhost:3001',
+  'http://127.0.0.1:3001'
+];
+
 export const env = Object.freeze({
   nodeEnv: process.env.NODE_ENV?.trim() || 'development',
   port: parsePort(process.env.PORT?.trim() || '4000'),
-  frontendOrigins: (process.env.FRONTEND_ORIGIN || 'http://localhost:3000,http://127.0.0.1:3000,http://localhost:3001,http://127.0.0.1:3001')
-    .split(',')
-    .map((origin) => origin.trim())
-    .filter(Boolean),
+  frontendOrigins: [...new Set([
+    ...configuredFrontendOrigins,
+    ...(process.env.NODE_ENV?.trim() === 'production' ? [] : localFrontendOrigins)
+  ])],
   mongodbUri: required('MONGODB_URI'),
   mongodbDatabaseName: process.env.MONGODB_DB_NAME?.trim() || 'tor_software'
 });

@@ -36,7 +36,7 @@ export function serializeTor(tor) {
     announcementType: tor.announcementType ?? null,
     url: tor.url ?? tor.sourceUrl ?? null,
     documentUrl: tor.documentUrl ?? null,
-    thumbnail: tor.thumbnail ?? (templateId ? `/api/thumbnail/${encodeURIComponent(templateId)}` : null),
+    thumbnail: tor.thumbnail ?? null,
     status: statusFor(tor)
   };
 }

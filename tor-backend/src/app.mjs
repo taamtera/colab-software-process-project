@@ -16,7 +16,9 @@ app.disable('x-powered-by');
 // Behind Google Cloud's load balancer, trust the proxy so request.ip is the real
 // client address (used only as a hashed value in audit logs).
 app.set('trust proxy', env.nodeEnv === 'production' ? 1 : false);
-app.use(helmet());
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: 'cross-origin' }
+}));
 app.use(cors({
   origin(origin, callback) {
     if (!origin || env.frontendOrigins.includes(origin)) {
