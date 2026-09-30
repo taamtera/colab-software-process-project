@@ -84,12 +84,12 @@ export default function Home() {
   useEffect(() => {
     let cancelled = false;
     authApi
-      .me()
+      .getSession()
       .then(({ user }) => {
-        if (!cancelled) setCurrentUser(safeUserToProfile(user));
+        if (!cancelled && user) setCurrentUser(safeUserToProfile(user));
       })
       .catch(() => {
-        // Not signed in (or backend unreachable) — remain logged out.
+        // Backend unreachable — remain logged out.
       });
     return () => {
       cancelled = true;

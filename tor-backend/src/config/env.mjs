@@ -2,8 +2,11 @@ import dotenv from 'dotenv';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+// Load tor-backend's own .env (path is relative to this file, not the cwd, so it
+// works no matter where node is started). Missing file is a no-op — in Docker the
+// values come from the image/compose environment instead.
 dotenv.config({
-  path: resolve(fileURLToPath(new URL('../../../database-design/.env', import.meta.url))),
+  path: resolve(fileURLToPath(new URL('../../.env', import.meta.url))),
   quiet: true
 });
 

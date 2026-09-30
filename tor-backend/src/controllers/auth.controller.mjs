@@ -1,6 +1,6 @@
 import * as authService from '../services/auth.service.mjs';
-import { clearAuthCookies, parseCookies, REFRESH_COOKIE, setAuthCookies } from '../utils/cookies.mjs';
-import { sha256 } from '../utils/tokens.mjs';
+import { ACCESS_COOKIE, clearAuthCookies, parseCookies, REFRESH_COOKIE, setAuthCookies } from '../utils/cookies.mjs';
+import { sha256, verifyAccessToken } from '../utils/tokens.mjs';
 import {
   validateEmailOnly,
   validateLogin,
@@ -71,4 +71,23 @@ export async function resetPassword(request, response) {
 export async function me(request, response) {
   const result = await authService.getCurrentUser(request.user.id);
   response.json(result);
+}
+
+// Soft session check for the frontend's on-load "am I logged in?" probe. Unlike
+// /me it never 401s — it returns 200 with { user: null } when there is no valid
+// session, so a logged-out page load doesn't log a console error.
+export async function session(request, response) {
+  const claims = verifyAccessToken(parseCookies(request)[ACCESS_COOKIE]);
+
+  if (!claims?.sub) {
+    response.json({ user: null });
+    return;
+  }
+
+  try {
+    const { user } = await authService.getCurrentUser(claims.sub);
+    response.json({ user });
+  } catch {
+    response.json({ user: null });
+  }
 }

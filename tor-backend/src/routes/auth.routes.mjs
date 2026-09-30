@@ -16,4 +16,5 @@ authRouter.post('/logout', handle(auth.logout));
 authRouter.post('/logout-all', authenticate, handle(auth.logoutAll));
 authRouter.post('/forgot-password', handle(auth.forgotPassword));
 authRouter.post('/reset-password', handle(auth.resetPassword));
+authRouter.get('/session', handle(auth.session));
 authRouter.get('/me', authenticate, handle(auth.me));

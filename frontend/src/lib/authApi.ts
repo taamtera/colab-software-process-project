@@ -109,3 +109,9 @@ export function forgotPassword(email: string): Promise<{ message: string }> {
 export function me(): Promise<{ user: SafeUser }> {
   return request('/me', { method: 'GET' });
 }
+
+// Soft "am I logged in?" check for page load. Always resolves 200 — returns
+// { user: null } when not signed in — so it never logs a console 401.
+export function getSession(): Promise<{ user: SafeUser | null }> {
+  return request('/session', { method: 'GET' });
+}
