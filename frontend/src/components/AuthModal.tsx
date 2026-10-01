@@ -55,7 +55,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [companyName, setCompanyName] = useState('');
-  const [taxId, setTaxId] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [infoMsg, setInfoMsg] = useState<string | null>(null);
@@ -102,7 +101,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     try {
       if (mode === 'login') {
         const { user } = await authApi.login(email, password);
-        onSuccess(safeUserToProfile(user, { companyName, taxId }));
+        onSuccess(safeUserToProfile(user, { companyName }));
         onClose();
       } else {
         const { firstName, lastName } = splitName(fullName);
@@ -112,10 +111,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           lastName,
           email,
           password,
-          company: { mode: 'create', legalName: companyName, taxId: taxId || null },
+          company: { mode: 'create', legalName: companyName },
           termsAccepted: true
         });
-        onSuccess(safeUserToProfile(user, { companyName, taxId }));
+        onSuccess(safeUserToProfile(user, { companyName }));
         onClose();
       }
     } catch (error) {
@@ -208,19 +207,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     className="w-full pl-10 pr-4 py-2.5 theme-input rounded-xl text-sm placeholder-slate-400"
                   />
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  เลขประจำตัวผู้เสียภาษี (Tax ID)
-                </label>
-                <input
-                  type="text"
-                  value={taxId}
-                  onChange={(e) => setTaxId(e.target.value)}
-                  placeholder="0105565012345"
-                  className="w-full px-4 py-2.5 theme-input rounded-xl text-sm placeholder-slate-400 font-mono"
-                />
               </div>
             </>
           )}
