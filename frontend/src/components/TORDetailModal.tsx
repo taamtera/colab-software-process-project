@@ -1,9 +1,13 @@
 'use client';
+import { procurementMethodLabel } from '@/lib/translate';
+import { useLanguage } from '@/lib/LanguageProvider';
+
 
 import React, { useState } from 'react';
 import { TORContract } from '@/types';
-import { PDFReader } from './PDFReader';
-import { getAnnouncementStage, getStatusClasses, getStatusLabel } from '@/lib/torPresentation';
+import { DocumentPreview } from './PDFReader';
+import { ProjectObservations } from './ProjectObservations';
+import { getStatusClasses, getStatusLabel } from '@/lib/torPresentation';
 import { 
   X, 
   Download, 
@@ -30,6 +34,7 @@ export const TORDetailModal: React.FC<TORDetailModalProps> = ({
   onClose,
   onDownloadPDF
 }) => {
+  const { t, language } = useLanguage();
   const [activeTab, setActiveTab] = useState<'pdf' | 'ai-eval'>('pdf');
 
   if (!contract) return null;
@@ -57,52 +62,51 @@ export const TORDetailModal: React.FC<TORDetailModalProps> = ({
               <div className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
                 <div className="flex items-center gap-2 mb-3">
                   <FileText className="w-4 h-4 text-sky-600 dark:text-sky-400" />
-                  <h2 className="text-sm font-bold text-slate-900 dark:text-white">Source data</h2>
+                  <h2 className="text-sm font-bold text-slate-900 dark:text-white">{t("Source data")}</h2>
                 </div>
                 <dl className="space-y-2 text-xs">
                   <div className="flex justify-between gap-3">
-                    <dt className="text-slate-500 dark:text-slate-400">Source</dt>
+                    <dt className="text-slate-500 dark:text-slate-400">{t("Source")}</dt>
                     <dd className="font-semibold text-slate-800 dark:text-slate-200">{contract.sourceId || 'EGP'}</dd>
                   </div>
                   <div className="flex justify-between gap-3">
-                    <dt className="text-slate-500 dark:text-slate-400">Department ID</dt>
-                    <dd className="font-semibold text-slate-800 dark:text-slate-200">{contract.departmentId || 'Not available'}</dd>
+                    <dt className="text-slate-500 dark:text-slate-400">{t("Department ID")}</dt>
+                    <dd className="font-semibold text-slate-800 dark:text-slate-200">{contract.departmentId || t("Not available")}</dd>
                   </div>
                   <div className="flex justify-between gap-3">
-                    <dt className="text-slate-500 dark:text-slate-400">Project ID</dt>
-                    <dd className="font-mono font-semibold text-slate-800 dark:text-slate-200 break-all text-right">{contract.projectId || 'Not available'}</dd>
+                    <dt className="text-slate-500 dark:text-slate-400">{t("Project ID")}</dt>
+                    <dd className="font-mono font-semibold text-slate-800 dark:text-slate-200 break-all text-right">{contract.projectId || t("Not available")}</dd>
                   </div>
                   <div className="flex justify-between gap-3">
-                    <dt className="text-slate-500 dark:text-slate-400">Template ID</dt>
-                    <dd className="font-mono font-semibold text-slate-800 dark:text-slate-200 break-all text-right">{contract.templateId || 'Not available'}</dd>
+                    <dt className="text-slate-500 dark:text-slate-400">{t("Identity")}</dt>
+                    <dd className="font-mono font-semibold text-slate-800 dark:text-slate-200 break-all text-right">{t(contract.identityScope || 'project')}</dd>
                   </div>
                   <div className="flex justify-between gap-3">
-                    <dt className="text-slate-500 dark:text-slate-400">Announcement</dt>
-                    <dd className="font-semibold text-slate-800 dark:text-slate-200 text-right">{typeof contract.announcementType === 'string' ? contract.announcementType : getAnnouncementStage(contract.announcementType)}</dd>
+                    <dt className="text-slate-500 dark:text-slate-400">{t("Announcement")}</dt>
+                    <dd className="font-semibold text-slate-800 dark:text-slate-200 text-right">{t(getStatusLabel(contract.status))}</dd>
                   </div>
                 </dl>
               </div>
 
               <button
                 onClick={() => onDownloadPDF(contract)}
+                disabled={!contract.documentUrl && !contract.url}
                 className="w-full py-2.5 px-4 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl shadow-sm flex items-center justify-center gap-2 text-sm transition-all"
               >
                 <Download className="w-4 h-4" />
-                <span>Download TOR PDF</span>
+                <span>{t('Download document')}</span>
               </button>
             </div>
 
             {/* Right Details (contract name, owner, dates, price, คุณสมบัติ) */}
             <div className="md:col-span-8 flex flex-col justify-between">
               <div>
-                <div className="flex items-center gap-2 mb-2">
+                <div className="flex flex-wrap items-center gap-2 mb-2">
                   <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                    {contract.category}
+                    {procurementMethodLabel(contract.category, language)}
                   </span>
-                  <span className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                    Status:
-                    <span className={`px-2 py-0.5 rounded-md border font-semibold ${getStatusClasses(contract.status, contract.announcementType)}`}>
-                      {getStatusLabel(contract.status, contract.announcementType)}
+                  <span className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5">{t("Status:")} <span className={`px-2 py-0.5 rounded-md border font-semibold ${getStatusClasses(contract.status)}`}>
+                      {t(getStatusLabel(contract.status))}
                     </span>
                   </span>
                 </div>
@@ -120,13 +124,12 @@ export const TORDetailModal: React.FC<TORDetailModalProps> = ({
 
                 <div className="flex flex-wrap gap-2 mb-3 text-xs">
                   <span className="px-2 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
-                    {getAnnouncementStage(contract.announcementType)}
+                    {t(getStatusLabel(contract.status))}
+                  </span>
+                  <span className="px-2 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">{t("Published:")} {contract.publishedAt || contract.postingDate}
                   </span>
                   <span className="px-2 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
-                    Published: {contract.publishedAt || contract.postingDate}
-                  </span>
-                  <span className="px-2 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
-                    {typeof contract.procurementMethod === 'string' ? contract.procurementMethod : contract.category}
+                    {procurementMethodLabel(typeof contract.procurementMethod === 'string' ? contract.procurementMethod : contract.category, language)}
                   </span>
                 </div>
 
@@ -134,12 +137,12 @@ export const TORDetailModal: React.FC<TORDetailModalProps> = ({
                 <div className="flex flex-wrap items-center gap-4 text-xs text-slate-600 dark:text-slate-300 mb-4 bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-800">
                   <div className="flex items-center gap-1.5">
                     <Calendar className="w-4 h-4 text-slate-400" />
-                    <span>ระยะเวลาสัญญา: <strong className="text-slate-900 dark:text-white">{contract.startDate} - {contract.endDate}</strong></span>
+                    <span>{t("Contract period:")} <strong className="text-slate-900 dark:text-white">{contract.startDate} - {contract.endDate}</strong></span>
                   </div>
                   {/* price: 3,000,000 THB */}
                   <div className="ml-auto">
-                    <span className="text-slate-500 dark:text-slate-400 mr-1.5">median price:</span>
-                    <strong className="text-lg text-slate-800 dark:text-slate-100 font-extrabold">{contract.priceFormatted.replaceAll("0","X")}</strong>
+                    <span className="text-slate-500 dark:text-slate-400 mr-1.5">{t("Project budget:")}</span>
+                    <strong className="text-lg text-slate-800 dark:text-slate-100 font-extrabold">{t(contract.priceFormatted)}</strong>
                   </div>
                 </div>
 
@@ -147,7 +150,7 @@ export const TORDetailModal: React.FC<TORDetailModalProps> = ({
                 <div>
                   <h3 className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                     <ShieldCheck className="w-4 h-4 text-slate-400" />
-                    <span>คุณสมบัติ (Requirements checklist)</span>
+                    <span>{t("Requirements checklist")}</span>
                   </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {contract.properties.map((prop, idx) => (
@@ -171,6 +174,7 @@ export const TORDetailModal: React.FC<TORDetailModalProps> = ({
           </div>
 
           {/* View Tab Switcher (PDF Reader vs Vertex AI Evaluation) */}
+          <ProjectObservations project={contract} />
           <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2">
             <div className="flex items-center gap-2">
               <button
@@ -182,7 +186,7 @@ export const TORDetailModal: React.FC<TORDetailModalProps> = ({
                 }`}
               >
                 <FileText className="w-4 h-4" />
-                <span>PDF Reader (pdf reader)</span>
+                <span>{t('Document preview')}</span>
               </button>
 
               <button
@@ -194,19 +198,18 @@ export const TORDetailModal: React.FC<TORDetailModalProps> = ({
                 }`}
               >
                 <BrainCircuit className="w-4 h-4" />
-                <span>Vertex AI Evaluation (NFR12)</span>
+                <span>{t("AI Evaluation")}</span>
               </button>
             </div>
 
-            <span className="text-xs text-slate-500 dark:text-slate-400 font-mono hidden sm:block">
-              Ref: {contract.id}
+            <span className="text-xs text-slate-500 dark:text-slate-400 font-mono hidden sm:block">{t("Ref:")} {contract.id}
             </span>
           </div>
 
           {/* Tab Content Display */}
           {activeTab === 'pdf' ? (
             /* pdf reader container */
-            <PDFReader contract={contract} onDownload={() => onDownloadPDF(contract)} />
+            <DocumentPreview contract={contract} onDownload={() => onDownloadPDF(contract)} />
           ) : (
             /* Vertex AI Evaluation details */
             <div className="bg-slate-50 dark:bg-slate-950 p-5 rounded-lg border border-slate-200 dark:border-slate-800 space-y-5">
@@ -216,14 +219,14 @@ export const TORDetailModal: React.FC<TORDetailModalProps> = ({
                     <Sparkles className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">Vertex AI Evaluation Analysis</h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">Model: {contract.aiEvaluation.aiModel} • Evaluated: {contract.aiEvaluation.evaluatedAt}</p>
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">{t("AI Evaluation Analysis")}</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{t("Model:")} {t(contract.aiEvaluation.aiModel)}{t("• Evaluated:")} {contract.aiEvaluation.evaluatedAt}</p>
                   </div>
                 </div>
 
                 <div className="text-right">
                   <span className="text-2xl font-black text-slate-800 dark:text-slate-100">{contract.aiEvaluation.qualificationMatchScore}%</span>
-                  <span className="text-[10px] text-slate-500 dark:text-slate-400 block uppercase">Match Confidence</span>
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400 block uppercase">{t("Match Confidence")}</span>
                 </div>
               </div>
 
@@ -231,10 +234,10 @@ export const TORDetailModal: React.FC<TORDetailModalProps> = ({
                 <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
                   <h4 className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                     <TrendingUp className="w-4 h-4" />
-                    <span>Price & Budget Assessment</span>
+                    <span>{t("Price & Budget Assessment")}</span>
                   </h4>
                   <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed mb-3">
-                    {contract.aiEvaluation.priceAssessment}
+                    {t(contract.aiEvaluation.priceAssessment)}
                   </p>
                   <div className="w-full bg-slate-100 dark:bg-slate-950 rounded-full h-2 overflow-hidden border border-slate-200 dark:border-slate-800">
                     <div className="bg-slate-600 h-full rounded-full" style={{ width: `${contract.aiEvaluation.priceScore}%` }} />
@@ -244,13 +247,12 @@ export const TORDetailModal: React.FC<TORDetailModalProps> = ({
                 <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
                   <h4 className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                     <AlertTriangle className="w-4 h-4 text-amber-500" />
-                    <span>Risk & Compliance Level</span>
+                    <span>{t("Risk & Compliance Level")}</span>
                   </h4>
                   <div className="inline-block px-2.5 py-0.5 rounded text-xs font-bold mb-2 bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800">
-                    {contract.aiEvaluation.riskLevel} Risk
-                  </div>
+                    {t(contract.aiEvaluation.riskLevel)}{t("Risk")} </div>
                   <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                    {contract.aiEvaluation.riskAnalysis}
+                    {t(contract.aiEvaluation.riskAnalysis)}
                   </p>
                 </div>
               </div>

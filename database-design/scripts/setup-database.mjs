@@ -1,5 +1,6 @@
 import { MongoClient, ServerApiVersion } from 'mongodb';
 import { loadEnvironment } from './env.mjs';
+import { ingestionDefinitions, ingestionIndexes, retiredIdentityIndexes, assertProjectIdentitiesReady } from './ingestion-schema.mjs';
 
 const { uri, databaseName } = loadEnvironment();
 const client = new MongoClient(uri, {
@@ -11,6 +12,7 @@ const client = new MongoClient(uri, {
 });
 
 const collectionDefinitions = {
+  ...ingestionDefinitions,
   sources: {
     required: ['code', 'name', 'baseUrl', 'adapterType', 'enabled', 'rawRetentionDays', 'createdAt', 'updatedAt'],
     properties: {
@@ -53,61 +55,6 @@ const collectionDefinitions = {
       updatedAt: { bsonType: 'date' }
     }
   },
-  tor_announcements: {
-    required: ['sourceId', 'departmentId', 'projectId', 'templateId', 'title', 'description', 'publishedAt', 'url', 'procurementMethod', 'announcementType', 'channelParams', 'itemParams', 'firstSeenAt', 'lastSeenAt'],
-    properties: {
-      sourceId: { bsonType: 'string', minLength: 1 },
-      departmentId: { bsonType: ['string', 'null'] },
-      departmentName: { bsonType: ['string', 'null'] },
-      projectId: { bsonType: ['string', 'null'] },
-      templateId: { bsonType: ['string', 'null'] },
-      title: { bsonType: ['string', 'null'], minLength: 3 },
-      description: { bsonType: ['string', 'null'] },
-      publishedAt: { bsonType: ['string', 'date', 'null'] },
-      url: { bsonType: ['string', 'null'], minLength: 8 },
-      documentUrl: { bsonType: ['string', 'null'], minLength: 8 },
-      thumbnail: { bsonType: ['string', 'null'] },
-      status: { enum: ['draft', 'open', 'closed', 'cancelled', 'awarded'] },
-      procurementMethod: { bsonType: ['string', 'object', 'null'] },
-      announcementType: { bsonType: ['string', 'object', 'null'] },
-      channelParams: { bsonType: 'object' },
-      itemParams: { bsonType: 'object' },
-      tagAssignments: {
-        bsonType: 'array',
-        items: {
-          bsonType: 'object',
-          required: ['tagId', 'requirementLevel', 'source', 'confidence', 'reviewStatus', 'assignedAt'],
-          properties: {
-            tagId: { bsonType: 'objectId' },
-            requirementLevel: { enum: ['required', 'preferred', 'informational'] },
-            source: { enum: ['manual', 'ai', 'crawler'] },
-            confidence: { bsonType: ['int', 'long', 'double'], minimum: 0, maximum: 1 },
-            reviewStatus: { enum: ['suggested', 'approved', 'rejected'] },
-            evidence: { bsonType: ['string', 'null'] },
-            reviewedByUserId: { bsonType: ['objectId', 'null'] },
-            reviewedAt: { bsonType: ['date', 'null'] },
-            assignedAt: { bsonType: 'date' }
-          }
-        }
-      },
-      firstSeenAt: { bsonType: ['string', 'date'] },
-      lastSeenAt: { bsonType: ['string', 'date'] }
-    }
-  },
-  thumbnails: {
-    required: ['templateId', 'contentType', 'data', 'sourceUrl', 'width', 'quality', 'size', 'updatedAt'],
-    properties: {
-      templateId: { bsonType: 'string', minLength: 1 },
-      projectId: { bsonType: ['string', 'null'] },
-      contentType: { bsonType: 'string', minLength: 5 },
-      data: { bsonType: 'string', minLength: 1 },
-      sourceUrl: { bsonType: ['string', 'null'] },
-      width: { bsonType: ['int', 'long'], minimum: 1 },
-      quality: { bsonType: ['int', 'long'], minimum: 1, maximum: 100 },
-      size: { bsonType: ['int', 'long'], minimum: 1 },
-      updatedAt: { bsonType: ['string', 'date'] }
-    }
-  },
   tor_versions: {
     required: ['torId', 'version', 'contentHash', 'changeType', 'snapshot', 'capturedAt'],
     properties: {
@@ -120,19 +67,6 @@ const collectionDefinitions = {
       rawItem: { bsonType: ['object', 'string', 'null'] },
       ingestionRunId: { bsonType: ['objectId', 'null'] },
       capturedAt: { bsonType: 'date' }
-    }
-  },
-  ingestion_runs: {
-    required: ['sourceId', 'fetchedAt', 'request', 'reportedCount', 'itemsReceived', 'complete'],
-    properties: {
-      sourceId: { bsonType: 'string', minLength: 1 },
-      fetchedAt: { bsonType: ['string', 'date'] },
-      request: { bsonType: 'object' },
-      channelParams: { bsonType: 'object' },
-      lastBuildDate: { bsonType: ['string', 'date', 'null'] },
-      reportedCount: { bsonType: ['int', 'long', 'double'], minimum: 0 },
-      itemsReceived: { bsonType: ['int', 'long', 'double'], minimum: 0 },
-      complete: { bsonType: 'bool' }
     }
   },
   raw_ingestion_items: {
@@ -414,6 +348,7 @@ const collectionDefinitions = {
 };
 
 const indexes = {
+  ...ingestionIndexes,
   sources: [
     [{ code: 1 }, { unique: true, name: 'uq_sources_code' }],
     [{ enabled: 1, lastSuccessfulRunAt: 1 }, { name: 'ix_sources_schedule' }]
@@ -429,28 +364,10 @@ const indexes = {
     [{ organizationId: 1, updatedAt: -1 }, { name: 'ix_projects_organization_updated' }],
     [{ sourceId: 1, updatedAt: -1 }, { name: 'ix_projects_source_updated' }]
   ],
-  tor_announcements: [
-    [{ templateId: 1 }, { unique: true, partialFilterExpression: { templateId: { $type: 'string' } }, name: 'uq_rss_tors_template' }],
-    [{ sourceId: 1, url: 1 }, { unique: true, partialFilterExpression: { url: { $type: 'string' } }, name: 'uq_rss_tors_source_url' }],
-    [{ sourceId: 1, publishedAt: -1 }, { name: 'ix_rss_tors_source_published' }],
-    [{ departmentId: 1, publishedAt: -1 }, { name: 'ix_rss_tors_department_published' }],
-    [{ announcementType: 1, publishedAt: -1 }, { name: 'ix_rss_tors_type_published' }],
-    [{ procurementMethod: 1, publishedAt: -1 }, { name: 'ix_rss_tors_method_published' }],
-    [{ title: 'text', description: 'text' }, { default_language: 'none', weights: { title: 10, description: 2 }, name: 'tx_rss_tors_discovery' }],
-    [{ 'tagAssignments.tagId': 1, 'tagAssignments.requirementLevel': 1 }, { name: 'ix_rss_tors_tags_level' }]
-  ],
-  thumbnails: [
-    [{ templateId: 1 }, { unique: true, name: 'uq_thumbnails_template' }],
-    [{ updatedAt: -1 }, { name: 'ix_thumbnails_updated' }]
-  ],
   tor_versions: [
     [{ torId: 1, version: 1 }, { unique: true, name: 'uq_tor_versions_number' }],
     [{ torId: 1, contentHash: 1 }, { unique: true, name: 'uq_tor_versions_content' }],
     [{ capturedAt: -1 }, { name: 'ix_tor_versions_captured' }]
-  ],
-  ingestion_runs: [
-    [{ sourceId: 1, fetchedAt: -1 }, { name: 'ix_rss_ingestion_source_fetched' }],
-    [{ complete: 1, fetchedAt: -1 }, { name: 'ix_rss_ingestion_complete_fetched' }]
   ],
   raw_ingestion_items: [
     [{ ingestionRunId: 1, sourceId: 1, contentHash: 1 }, { unique: true, name: 'uq_raw_run_source_content' }],
@@ -519,11 +436,12 @@ const indexes = {
 };
 
 const obsoleteIndexes = {
-  ingestion_runs: ['ix_ingestion_status_started'],
+  thumbnails: retiredIdentityIndexes.thumbnails,
   users: ['uq_users_email'],
   ai_evaluations: ['ix_ai_status_created'],
   notifications: ['ix_notifications_delivery_queue'],
   tor_announcements: [
+    ...retiredIdentityIndexes.tor_announcements,
     'uq_tors_source_dedup',
     'uq_announcements_source_key',
     'ix_announcements_project_published',
@@ -535,6 +453,7 @@ const obsoleteIndexes = {
     'tx_tors_discovery'
   ],
   ingestion_runs: [
+    'ix_ingestion_status_started',
     'ix_ingestion_source_started',
     'ix_ingestion_environment_status',
     'ix_ingestion_triggered_started'
@@ -578,6 +497,8 @@ try {
   await client.connect();
   const database = client.db(databaseName);
   await database.command({ ping: 1 });
+
+  await assertProjectIdentitiesReady(database);
 
   for (const [collectionName, definition] of Object.entries(collectionDefinitions)) {
     await createOrUpdateCollection(database, collectionName, definition);

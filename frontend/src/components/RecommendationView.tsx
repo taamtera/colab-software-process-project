@@ -1,4 +1,6 @@
 'use client';
+import { useLanguage } from '@/lib/LanguageProvider';
+
 
 import React from 'react';
 import { SoftwareHouseProfile, TORContract } from '@/types';
@@ -28,6 +30,7 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
   onEditProfile,
   onToggleNotifications
 }) => {
+  const { t } = useLanguage();
   const recommendedContracts = [...contracts].sort(
     (a, b) => (b.matchedScore || 0) - (a.matchedScore || 0)
   );
@@ -53,12 +56,9 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
 
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-xl md:text-2xl font-extrabold text-slate-900 dark:text-white">
-                  username: <span className="text-slate-700 dark:text-slate-300">{currentUser.name}</span>
+                <h2 className="text-xl md:text-2xl font-extrabold text-slate-900 dark:text-white">{t("username:")} <span className="text-slate-700 dark:text-slate-300">{currentUser.name}</span>
                 </h2>
-                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                  Verified Software House
-                </span>
+                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">{t("Verified Software House")} </span>
               </div>
               <p className="text-xs text-slate-600 dark:text-slate-300 font-medium flex items-center gap-2 mt-1">
                 <Building2 className="w-3.5 h-3.5 text-slate-400" />
@@ -80,7 +80,7 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
               }`}
             >
               <Bell className={`w-4 h-4 ${currentUser.notificationsEnabled ? 'text-slate-600 dark:text-slate-300' : ''}`} />
-              <span>{currentUser.notificationsEnabled ? 'Notifications Active' : 'Notifications Muted'}</span>
+              <span>{currentUser.notificationsEnabled ? t("Notifications Active") : t("Notifications Muted")}</span>
             </button>
 
             <button
@@ -88,7 +88,7 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
               className="flex items-center gap-1.5 px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-white transition-all shadow-sm"
             >
               <Edit3 className="w-3.5 h-3.5 text-slate-400" />
-              <span>Edit Property Data</span>
+              <span>{t("Edit Property Data")}</span>
             </button>
           </div>
         </div>
@@ -98,11 +98,9 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2">
               <ShieldCheck className="w-4 h-4 text-slate-400" />
-              <span>property (Verified Qualifications & Capabilities)</span>
+              <span>{t("Verified qualifications and capabilities")}</span>
             </h3>
-            <span className="text-[11px] text-slate-400 dark:text-slate-500 font-mono">
-              Vertex AI Engine Verified
-            </span>
+            <span className="text-[11px] text-slate-400 dark:text-slate-500 font-mono">{t("Vertex AI Engine Verified")} </span>
           </div>
 
           {/* Render property items */}
@@ -129,18 +127,14 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
               <Sparkles className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-                Watch List
-              </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                สัญญาจ้าง TOR ที่คุณชอบ
-              </p>
+              <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">{t("Watch List")} </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400">{t("Your recommended TOR projects")} </p>
             </div>
           </div>
 
           <div className="hidden sm:flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
             <TrendingUp className="w-4 h-4 text-slate-400" />
-            <span>Highest Match Score First</span>
+            <span>{t("Highest Match Score First")}</span>
           </div>
         </div>
 

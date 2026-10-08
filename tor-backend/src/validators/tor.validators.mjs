@@ -1,6 +1,6 @@
 import { httpError } from '../utils/http-error.mjs';
 
-const TOR_STATUSES = ['draft', 'open', 'closed', 'cancelled', 'awarded'];
+const TOR_STATUSES = ['procurement_planned', 'reference_price_published', 'draft_tender_published', 'invitation_published', 'award_published', 'invitation_cancelled', 'award_cancelled', 'invitation_amended', 'award_amended', 'multiple_announcements_same_day'];
 const UPDATE_FIELDS = [
   'title',
   'description',
@@ -93,7 +93,11 @@ export function validateTorUpdate(body) {
       update[field] = optionalText(body[field], field);
     }
   }
-  for (const field of ['publishedAt', 'submissionDeadline', 'projectStartAt', 'projectEndAt']) {
+  if (body.publishedAt !== undefined) {
+    if (typeof body.publishedAt !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(body.publishedAt) || Number.isNaN(Date.parse(body.publishedAt))) invalid('publishedAt must be YYYY-MM-DD.');
+    update.publishedAt = body.publishedAt;
+  }
+  for (const field of ['submissionDeadline', 'projectStartAt', 'projectEndAt']) {
     if (body[field] !== undefined) {
       update[field] = optionalDate(body[field], field);
     }

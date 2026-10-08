@@ -1,14 +1,14 @@
 # TOR Software Database Model
 
+The current ingestion workflow writes exactly three collections: `tor_announcements`, `thumbnails`, and `ingestion_runs`. The other collections below support authentication, tagging, AI, and other application features; they are outside the crawler flow. Legacy normalized staging/version collections are optional application extensions, not ingestion requirements.
+
 ## Relationship Overview
 
 ```mermaid
 erDiagram
     SOURCES ||--o{ ORGANIZATIONS : publishes
     SOURCES ||--o{ PROCUREMENT_PROJECTS : identifies
-    SOURCES ||--o{ INGESTION_RUNS : records
-    SOURCES ||--o{ RSS_QUERY_STATE : tracks
-    INGESTION_RUNS ||--o{ RAW_INGESTION_ITEMS : contains
+    TOR_ANNOUNCEMENTS ||--o| THUMBNAILS : projectId
     ORGANIZATIONS ||--o{ PROCUREMENT_PROJECTS : owns
     PROCUREMENT_PROJECTS ||--o{ TOR_ANNOUNCEMENTS : publishes
     TOR_ANNOUNCEMENTS ||--o{ TOR_VERSIONS : preserves
@@ -27,7 +27,7 @@ erDiagram
     TOR_ANNOUNCEMENTS ||--o{ NOTIFICATIONS : triggers
 ```
 
-MongoDB references use `ObjectId` values. Relationships are shown here to communicate ownership; MongoDB does not enforce foreign keys automatically.
+The current ingestion identity is a string `projectId`; MongoDB `_id` values remain internal. Optional application references use `ObjectId` values. Relationships are shown here to communicate ownership; MongoDB does not enforce foreign keys automatically.
 
 ## 1. `sources`
 
@@ -73,185 +73,82 @@ The unique project identity is `sourceId + externalProjectId`.
 
 ## 4. `tor_announcements`
 
-Stores procurement announcement publications ingested from public procurement portals.
+One document per project, upserted by **string `projectId`**. A plan ID such as `P69100015073` stays separate from a numeric procurement ID, including when `linkedProjectId` points to that procurement project. Never identify frontend projects using `_id`, a template ID, or a URL. Preserve department IDs such as `"0001"` as strings.
 
-In the current live system (verified against 70 live documents in MongoDB Atlas from `sourceId: "EGP"`), this collection stores the **Live RSS Ingestion Document Model**. In a subsequent processing stage, these records can be extended into the **Normalized TOR Model** for enriched full-text search, detailed organization hierarchies, and AI matching.
+Top-level `templateId`, `announcementType`, and `projectKey` are retired. Raw document parameters, including template IDs when available, remain inside `itemParams` and each stage observation's parameter bags.
 
-### Live Ingestion Schema (Current Atlas Database)
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `projectId` | string | Unique source project or plan identity |
+| `scope` | string | Currently `department` |
+| `linkedProjectId` | string/null | Project ID found in the document URL; does not replace identity |
+| `identityScope` | string | `project` or `plan` |
+| `title`, `description` | string/null | Latest display text |
+| `departmentId`, `departmentName` | string/null | Source department identity and name |
+| `procurementMethod` | string/object/null | Source procurement method |
+| `publishedAt` | string | Display announcement publication date |
+| `url`, `documentUrl` | string/null | Original announcement and document links |
+| `thumbnail`, `thumbnailSourceUrl` | string/null | Project thumbnail route and originating document URL |
+| `channelParams`, `itemParams` | object | Original source parameters |
+| `firstSeenAt`, `lastSeenAt` | string | First sighting is preserved; last sighting changes on ingestion |
+| `status` | string | Latest observed RSS stage |
+| `statusPublishedAt` | string | Stage publication date, `YYYY-MM-DD` |
+| `statusOrderAmbiguous` | boolean | Different stages share the latest publication date |
+| `stageObservations` | object | Latest retained observation per stage code |
+| `biddingOpenVerified` | boolean | Currently always `false`; invitation publication does not verify open bidding |
+| `titleMatchedKeywords` | string[] | Software/IT title keywords matched by ingestion |
 
-Every document ingested by the RSS crawler contains the following fields:
+### Stage observations and RSS status
 
-| Field | BSON Type | Nullable | Description & Live Examples |
-| --- | --- | --- | --- |
-| `_id` | `ObjectId` | No | Unique MongoDB document identifier. |
-| `sourceId` | `string` | No | Originating source code (e.g., `"EGP"`). |
-| `departmentId` | `string` | Yes | Source department code (e.g., `"0307"` for Thai Revenue Department / กรมสรรพากร). |
-| `projectId` | `string` | Yes | Source procurement project identifier (e.g., `"69089624058"`). Not unique alone because one project can produce multiple announcements. |
-| `templateId` | `string` | Yes | UUID identifier used by e-GP PDF download service (e.g., `"80c0d1e8-e215-41ad-8eb5-c03c33bce482"`). Set to `null` when the source link points to a legacy web/JSP query rather than a template PDF. |
-| `title` | `string` | No | Thai announcement headline (e.g., `"ประกวดราคาจ้างเหมาบริการทำความสะอาด-ทำสวน ของสำนักงานสรรพากรพื้นที่ตาก..."`). Min length: 3 chars. |
-| `description` | `string` | Yes | Formatted summary snippet from the RSS feed, typically matching `"${projectId}, ${procurementMethod}, ${announcementType}"`. |
-| `publishedAt` | `string` \| `date` | Yes | Publication date. Currently stored as an ISO date string (`"YYYY-MM-DD"`, e.g., `"2026-09-02"`). |
-| `url` | `string` | No | Verification link pointing to the PDF document or legacy search result page. Min length: 8 chars. |
-| `procurementMethod` | `string` \| `object` | Yes | Procurement method name in Thai (e.g., `"ประกวดราคาอิเล็กทรอนิกส์ (e-bidding)"` or `"จ้างที่ปรึกษาโดยวิธีประกาศเชิญชวนทั่วไป"`). |
-| `announcementType` | `string` \| `object` | Yes | Announcement type in Thai (e.g., `"ประกาศเชิญชวน"`). |
-| `channelParams` | `object` | No | RSS channel query parameters captured during crawl (`homeflag`, `proc_id`, `servlet`, `methodId`, `announceType`). |
-| `itemParams` | `object` | No | Source URL query parameters. Varies by announcement link type (see Item Parameter Variants below). |
-| `tagAssignments` | `array` | Yes | Controlled tags assigned to the announcement. Each element contains `tagId`, `requirementLevel` (`required`, `preferred`, `informational`), `source` (`manual`, `ai`, `crawler`), `confidence` (0–1), `reviewStatus` (`suggested`, `approved`, `rejected`), `evidence`, `reviewedByUserId`, `reviewedAt`, and `assignedAt`. |
-| `firstSeenAt` | `string` \| `date` | No | Timestamp when the crawler first captured this announcement (e.g., `"2026-09-02T19:05:38.161Z"`). |
-| `lastSeenAt` | `string` \| `date` | No | Timestamp when the crawler last observed this announcement in the source feed (e.g., `"2026-09-02T19:05:38.161Z"`). |
-| `updatedAt` | `date` | Yes | Timestamp of the last backend modification (e.g. tag assignments or administrative edits). |
-| `updatedByUserId` | `ObjectId` | Yes | Reference to the user who performed the last modification. |
+| Code | Status |
+| --- | --- |
+| `P0` | `procurement_planned` |
+| `15` | `reference_price_published` |
+| `B0` | `draft_tender_published` |
+| `D0` | `invitation_published` |
+| `W0` | `award_published` |
+| `D1` | `invitation_cancelled` |
+| `W1` | `award_cancelled` |
+| `D2` | `invitation_amended` |
+| `W2` | `award_amended` |
 
-#### Item Parameter Variants (`itemParams`)
+Each observation retains its own title, publication date, document links, raw parameters, and timestamps. It retains the latest observation for that stage, **not every historical announcement**. Entries are an unordered keyed object.
 
-Analysis of live database records reveals two structural variants in `itemParams`:
+When different stages share the latest publication date, use `status: "multiple_announcements_same_day"` and `statusOrderAmbiguous: true`. Display all stages with that latest date individually and allow each to match the stage filter. Do not infer which stage happened last or describe an invitation as verified open bidding.
 
-1. **Standard Template PDF (Direct View Service)**:
-   For e-bidding announcements where `url` points to `egp-template-service/dwnt/view-pdf-file`:
-   ```json
-   {
-     "templateId": "80c0d1e8-e215-41ad-8eb5-c03c33bce482"
-   }
-   ```
-2. **Legacy Web / JSP Search Result**:
-   For consultancy or non-template announcements where `url` points to `egp2procmainWeb/jsp/procsearch.sch`:
-   ```json
-   {
-     "servlet": "gojsp",
-     "proc_id": "ShowHTMLFile",
-     "processFlows": "Procure",
-     "projectId": "69089266414",
-     "templateType": "D2",
-     "temp_Announ": "A",
-     "temp_itemNo": "0",
-     "seqNo": "0"
-   }
-   ```
+### Removed enrichment fields
 
-#### Live Database Sample Documents
+Project documents and API responses must omit these fields entirely, including null or empty placeholders:
 
-##### Variant 1: e-Bidding with Direct PDF Template
-```json
-{
-  "_id": { "$oid": "6a9878268e3677918f092998" },
-  "sourceId": "EGP",
-  "departmentId": "0307",
-  "projectId": "69089624058",
-  "templateId": "80c0d1e8-e215-41ad-8eb5-c03c33bce482",
-  "title": "ประกวดราคาจ้างเหมาบริการทำความสะอาด-ทำสวน ของสำนักงานสรรพากรพื้นที่ตาก และทำความสะอาดสำนักงานสรรพากรพื้นที่สาขาในสังกัด ในปีงบประมาณ พ.ศ. 2570 ด้วยวิธีประกวดราคาอิเล็กทรอนิกส์ (e-bidding)",
-  "description": "69089624058, ประกวดราคาอิเล็กทรอนิกส์ (e-bidding), ประกาศเชิญชวน",
-  "publishedAt": "2026-09-02",
-  "url": "https://process5.gprocurement.go.th/egp-template-service/dwnt/view-pdf-file?templateId=80c0d1e8-e215-41ad-8eb5-c03c33bce482",
-  "procurementMethod": "ประกวดราคาอิเล็กทรอนิกส์ (e-bidding)",
-  "announcementType": "ประกาศเชิญชวน",
-  "channelParams": {
-    "homeflag": "A",
-    "proc_id": "FPRO9965",
-    "servlet": "FPRO9965Servlet",
-    "methodId": "",
-    "announceType": "2"
-  },
-  "itemParams": {
-    "templateId": "80c0d1e8-e215-41ad-8eb5-c03c33bce482"
-  },
-  "firstSeenAt": "2026-09-02T19:05:38.161Z",
-  "lastSeenAt": "2026-09-02T19:05:38.161Z"
-}
-```
+`opend`, `opendLookup`, `province`, `district`, `subdistrict`, `projectLocation`, `projectMoney`, `referencePrice`, `totalContractValue`, `contractProjectStatus`, `contracts`, `opendUpdatedAt`, `locationFilter`.
 
-##### Variant 2: General Consultation with HTML/JSP Parameter Bag
-```json
-{
-  "_id": { "$oid": "6a9ef4b769505e45e1c7fa9c" },
-  "sourceId": "EGP",
-  "departmentId": "0307",
-  "projectId": "69089266414",
-  "templateId": null,
-  "title": "จ้างที่ปรึกษาโครงการจ้างที่ปรึกษาการจัดทำระบบบริหารด้านการให้บริการและด้านความมั่นคงปลอดภัยสารสนเทศของศูนย์ปฏิบัติการเครือข่ายสื่อสาร กรมสรรพากร และศูนย์ปฏิบัติการความมั่นคงปลอดภัยและเฝ้าระวังความมั่นคงปลอดภัยสารสนเทศ กรมสรรพากร โดยวิธีประกาศเชิญชวนทั่วไป",
-  "description": "69089266414, จ้างที่ปรึกษาโดยวิธีประกาศเชิญชวนทั่วไป, ประกาศเชิญชวน",
-  "publishedAt": "2026-09-07",
-  "url": "http://process.gprocurement.go.th/egp2procmainWeb/jsp/procsearch.sch?servlet=gojsp&proc_id=ShowHTMLFile&processFlows=Procure&projectId=69089266414&templateType=D2&temp_Announ=A&temp_itemNo=0&seqNo=0",
-  "procurementMethod": "จ้างที่ปรึกษาโดยวิธีประกาศเชิญชวนทั่วไป",
-  "announcementType": "ประกาศเชิญชวน",
-  "channelParams": {
-    "homeflag": "A",
-    "proc_id": "FPRO9965",
-    "servlet": "FPRO9965Servlet",
-    "methodId": "",
-    "announceType": "2"
-  },
-  "itemParams": {
-    "servlet": "gojsp",
-    "proc_id": "ShowHTMLFile",
-    "processFlows": "Procure",
-    "projectId": "69089266414",
-    "templateType": "D2",
-    "temp_Announ": "A",
-    "temp_itemNo": "0",
-    "seqNo": "0"
-  },
-  "firstSeenAt": "2026-09-07T17:30:31.393Z",
-  "lastSeenAt": "2026-09-07T17:30:31.393Z"
-}
-```
+These fields are forbidden by the revised project validator. The API strips them from legacy input, the frontend does not map or display them, and the migration removes them instead of creating defaults. Keep the enrichment step disabled in the external ingestion workflow; its configuration is outside this repository. Project IDs, RSS stages, source parameters, sighting timestamps, and thumbnails remain part of the contract.
 
-### Active Database Indexes
+Use `npm run db:verify-enrichment-removed` for a read-only check across every project document, including non-EGP sources. It checks `$exists: true`, so even a field whose value is null counts as a failure. The earlier `$unset` command filtered by `sourceId: "EGP"`; it does not affect other sources. Local validator changes take effect when the database setup is applied.
 
-The `tor_announcements` collection in MongoDB Atlas maintains the following 8 indexes:
+### Indexes and migration
 
-1. `_id_`: Default unique primary key on `{ _id: 1 }`.
-2. `uq_rss_tors_source_url`: **Unique** compound index on `{ sourceId: 1, url: 1 }` preventing duplicate feed item ingestion.
-3. `ix_rss_tors_source_published`: Compound index on `{ sourceId: 1, publishedAt: -1 }` for source feed chronological ordering.
-4. `ix_rss_tors_department_published`: Compound index on `{ departmentId: 1, publishedAt: -1 }` for departmental filtering.
-5. `ix_rss_tors_type_published`: Compound index on `{ announcementType: 1, publishedAt: -1 }` for announcement category queries.
-6. `ix_rss_tors_method_published`: Compound index on `{ procurementMethod: 1, publishedAt: -1 }` for procurement method filters.
-7. `tx_rss_tors_discovery`: Text index on `{ title: "text", description: "text" }` with weights `{ title: 10, description: 2 }`, `default_language: "none"`, and `language_override: "language"` for keyword searches.
-8. `ix_rss_tors_tags_level`: Compound index on `{ "tagAssignments.tagId": 1, "tagAssignments.requirementLevel": 1 }` for capability and requirement tag matching.
+`uq_tors_project_id` is a full unique index on `{ projectId: 1 }`. The old unique template/source-URL indexes and announcement-type index are retired. Discovery indexes support department/publication date, RSS status/date, procurement method, text search, and optional tags.
 
-### Uniqueness & Identity Evolution
-
-- **Current Live RSS Stage**: The unique document identity is `sourceId + url`, enforced by `uq_rss_tors_source_url`. `projectId` alone is not unique because a single procurement project regularly issues multiple announcements (e.g. preliminary draft TOR, public hearing, invitation, and amendment).
-- **Future Normalized Stage**: When cross-source normalization is active, deduplication will transition to `sourceId + announcementKey` (where `announcementKey` is deterministically derived from source identifiers such as `projectId + templateType + tempAnnoun + tempItemNo + seqNo`), insulating against fluctuating query parameters and session tokens in source URLs.
-
-### Future Normalized TOR Extension Fields
-
-The later normalized TOR model expands this collection with the following domain fields for downstream AI and matching services:
-
-- `procurementProjectId`: Parent procurement project reference (`ObjectId` linking to `procurement_projects`).
-- `announcementKey`: Deterministic key derived from source announcement identifiers.
-- `externalProjectId`, `templateType`, `tempAnnoun`, `tempItemNo`, and `seqNo`: Source identifiers retained as structured strings.
-- `summary`, `category`, and `keywords`: Processed full-text searchable data.
-- `organization`: Bounded display snapshot containing `organizationId`, optional external ID, Thai and English names, organization type, ancestor IDs, and optional purchasing-unit name.
-- `budget`: Structured amount or range in THB (`minAmount`, `maxAmount`) and source text representation.
-- `publishedAt`, `submissionDeadline`, `projectStartAt`, `projectEndAt`: Standardized BSON `date` timestamps.
-- `sourceUrl`: Original verification link.
-- `documents`: PDF metadata and storage locations (`sourceUrl`, `storageUrl`, `checksum`, `mimeType`, `pageCount`, `fileSizeBytes`).
-- `status`: `draft`, `open`, `closed`, `cancelled`, or `awarded`.
-- `version` and `contentHash`: Change tracking for version creation.
-
-> [!NOTE]
-> **PDF Storage Policy**: Do not store large PDF binary files directly in MongoDB documents. Store documents in Google Cloud Storage and maintain references and metadata in `documents`.
-
-### Current e-GP Thumbnail Fields
-
-- `departmentName`: agency display name captured with `departmentId`.
-- `documentUrl`: actual PDF or document URL when it differs from the announcement verification `url`.
-- `thumbnail`: backend route reference such as `/api/thumbnail/{templateId}`; it is never the Base64 image data.
-- `status`: `draft`, `open`, `closed`, `cancelled`, or `awarded`. Legacy records without this field are treated as open by the backend list API.
+The ingestion workflow neither migrates old documents nor creates indexes. Use the migration procedure in the README before `db:setup` on an existing database. Setup refuses unmigrated identities before changing validators or indexes. MongoDB `_id` values stay internal; when duplicate documents merge, one existing `_id` survives.
 
 ## Thumbnail storage (`thumbnails`)
 
-Stores the generated first-page image separately from `tor_announcements`.
+One thumbnail per string `projectId`, with a full unique `{ projectId: 1 }` index named `uq_thumbnails_project_id`.
 
-Important fields:
+| Field | Type |
+| --- | --- |
+| `projectId` | string |
+| `contentType` | string (`image/webp`) |
+| `data` | string (base64 image bytes) |
+| `sourceUrl` | string |
+| `sourcePublishedAt` | string (`YYYY-MM-DD`) |
+| `width`, `quality`, `size` | number |
+| `updatedAt` | string |
 
-- `templateId`: unique e-GP template linkage to the TOR announcement.
-- `projectId`: optional source project identifier.
-- `contentType`: normally `image/webp`.
-- `data`: Base64-encoded image bytes; this field is served only through `GET /api/thumbnail/:templateId` and is never included in TOR JSON responses.
-- `sourceUrl`, `width`, `quality`, `size`, and `updatedAt`: generation and cache metadata.
+Serve `GET /api/thumbnail/:projectId`: query the exact string ID, check that `sourceUrl` equals the project's current `documentUrl`, decode base64, and return `Content-Type: image/webp`. Return `404` for missing or stale data. Never include base64 image data in project responses.
 
-The backend returns `404` when a thumbnail is missing. Frontend cards and detail views must show a document placeholder in that case.
+The frontend polls projects every 30 seconds and independently reloads thumbnails every 30 seconds, including after a `404`. Project and thumbnail updates are independent. Both project document responses and thumbnail responses disable cache retention so old source images cannot remain cached after a document change.
 
 ## 5. `tor_versions`
 
@@ -268,22 +165,11 @@ Important fields:
 
 ## 6. `ingestion_runs`
 
-Tracks each RSS fetch for the current crawler stage.
+Request logs for department/stage RSS ingestion. `announcementType` remains request metadata here; it is not a top-level project field. Department IDs remain strings.
 
-Required RSS-stage fields:
+Core fields are `fetchedAt`, `request`, `reportedCount`, `itemsReceived`, and `complete`. `request` retains department and stage parameters. Optional fields include `sourceId`, `channelParams`, and `lastBuildDate`.
 
-- `sourceId`: source code such as `EGP`
-- `fetchedAt`: fetch timestamp as an ISO string or MongoDB date
-- `request`: endpoint and non-secret request parameters
-- `reportedCount` and `itemsReceived`: feed counts
-- `complete`: whether the complete feed was retrieved
-
-Optional fields:
-
-- `channelParams`: RSS channel parameters
-- `lastBuildDate`: source feed timestamp
-
-The full crawler lifecycle fields can be added later when processing, retries, and operational auditing are introduced.
+Logs retain raw received counts, keyword matched/rejected counts, and completeness. The validator permits the workflow's counters and additional request metadata; `rawReceivedCount`, `keywordMatchedCount`, and `keywordRejectedCount` are supported counter names. Completeness is evaluated against raw feed counts before the software/IT title filter, not the number of retained projects. Historical logs are preserved unchanged during project migration because missing keyword counts cannot be reconstructed reliably.
 
 ## 7. `raw_ingestion_items`
 

@@ -30,6 +30,7 @@ export const INITIAL_SOFTWARE_HOUSE: SoftwareHouseProfile = {
 export const MOCK_TOR_CONTRACTS: TORContract[] = [
   {
     id: 'tor-002',
+    projectId: 'tor-002',
     title: 'โครงการพัฒนาระบบฐานข้อมูลบริการสุขภาพกรุงเทพฯ (Bangkok Digital Health Record)',
     contractOwner: 'สำนักการแพทย์ กรุงเทพมหานคร',
     publisherType: 'BMA (กรุงเทพมหานคร)',
@@ -43,7 +44,7 @@ export const MOCK_TOR_CONTRACTS: TORContract[] = [
     description: 'พัฒนาระบบเชื่อมโยงระเบียบประวัติผู้ป่วยอิเล็กทรอนิกส์ (EHR) ระหว่างโรงพยาบาลในสังกัด กทม. 11 แห่ง พร้อมระบบจองคิวออนไลน์และแอปพลิเคชันประชาชน',
     thumbnail: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=600&q=80',
     pdfUrl: '/mock-tor-002.pdf',
-    status: 'Open for Bidding',
+    status: 'invitation_published',
     matchedScore: 98,
     properties: [
       { id: 'p5', property: 'มีผลงานพัฒนาระบบบริหารจัดการข้อมูลขนาดใหญ่ (Big Data / EHR)', category: 'experience', required: true, fulfilledBySoftwareHouse: true },
@@ -68,6 +69,7 @@ export const MOCK_TOR_CONTRACTS: TORContract[] = [
   },
   {
     id: 'tor-003',
+    projectId: 'tor-003',
     title: 'แพลตฟอร์มบริหารจัดการสิ่งแวดล้อมและตรวจวัดฝุ่น PM2.5 (Eco-Monitoring IoT Platform)',
     contractOwner: 'สำนักงานเขตจตุจักร กรุงเทพมหานคร',
     publisherType: 'BMA (กรุงเทพมหานคร)',
@@ -81,7 +83,7 @@ export const MOCK_TOR_CONTRACTS: TORContract[] = [
     description: 'จัดทำระบบเชื่อมโยงเซนเซอร์ตรวจวัดคุณภาพอากาศแบบ IoT ทั่วพื้นที่ พร้อมแบบจำลอง AI พยากรณ์ระดับฝุ่นควันล่วงหน้า 72 ชั่วโมง',
     thumbnail: 'https://images.unsplash.com/photo-1611273426858-450d8e3c9fce?auto=format&fit=crop&w=600&q=80',
     pdfUrl: '/mock-tor-003.pdf',
-    status: 'Open for Bidding',
+    status: 'invitation_published',
     matchedScore: 68,
     properties: [
       { id: 'p9', property: 'มีประสบการณ์พัฒนาระบบวิเคราะห์ข้อมูลเวล็จริง (Real-Time Analytics)', category: 'experience', required: true, fulfilledBySoftwareHouse: true },
@@ -105,6 +107,7 @@ export const MOCK_TOR_CONTRACTS: TORContract[] = [
   },
   {
     id: 'tor-004',
+    projectId: 'tor-004',
     title: 'จ้างเหมาพัฒนาระบบยื่นคำขออนุญาตก่อสร้างออนไลน์ (One-Stop Permitting System)',
     contractOwner: 'สำนักการโยธา กรุงเทพมหานคร',
     publisherType: 'BMA (กรุงเทพมหานคร)',
@@ -118,7 +121,7 @@ export const MOCK_TOR_CONTRACTS: TORContract[] = [
     description: 'ยกระดับการให้บริการยื่นแบบแปลนและขออนุญาตก่อสร้างผ่านช่องทางดิจิทัล 100% พร้อมระบบลงนามอิเล็กทรอนิกส์ (e-Signature) และชำระค่าธรรมเนียมออนไลน์',
     thumbnail: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=600&q=80',
     pdfUrl: '/mock-tor-004.pdf',
-    status: 'Open for Bidding',
+    status: 'invitation_published',
     matchedScore: 70,
     properties: [
       { id: 'p12', property: 'มีผลงานพัฒนาระบบ e-Service หรือ e-Permit ภาคการเมือง/รัฐบาล', category: 'experience', required: true, fulfilledBySoftwareHouse: true },
@@ -142,6 +145,7 @@ export const MOCK_TOR_CONTRACTS: TORContract[] = [
   },
   {
     id: 'tor-005',
+    projectId: 'tor-005',
     title: 'โครงการพัฒนาระบบคลาวด์เนทีฟสำหรับจัดเก็บและวิเคราะห์งบประมาณประจำปี (Cloud Analytics)',
     contractOwner: 'สำนักงบประมาณ กรุงเทพมหานคร',
     publisherType: 'BMA (กรุงเทพมหานคร)',
@@ -155,7 +159,7 @@ export const MOCK_TOR_CONTRACTS: TORContract[] = [
     description: 'ออกแบบย้ายฐานข้อมูลระบบงบประมาณขึ้นโครงสร้างพื้นฐาน Private Cloud ปลอดภัยสูง พร้อมแดชบอร์ดสรุปผลผู้บริหารด้วย AI Data Insights',
     thumbnail: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=600&q=80',
     pdfUrl: '/mock-tor-005.pdf',
-    status: 'Open for Bidding',
+    status: 'invitation_published',
     matchedScore: 59,
     properties: [
       { id: 'p15', property: 'มีผลงานย้ายระบบงานเข้าสู่ Cloud Infrastructure วงเงินไม่น้อยกว่า 5 ล้านบาท', category: 'experience', required: true, fulfilledBySoftwareHouse: true },
@@ -179,6 +183,7 @@ export const MOCK_TOR_CONTRACTS: TORContract[] = [
   },
   {
     id: 'tor-006',
+    projectId: 'tor-006',
     title: 'จ้างที่ปรึกษาพัฒนาระบบศูนย์ปฏิบัติการเฝ้าระวังความปลอดภัยไซเบอร์ (Cybersecurity Consulting)',
     contractOwner: 'กระทรวงดิจิทัลเพื่อเศรษฐกิจและสังคม (MDES)',
     publisherType: 'Ministry',
@@ -192,7 +197,7 @@ export const MOCK_TOR_CONTRACTS: TORContract[] = [
     description: 'จัดตั้งศูนย์ปฏิบัติการเฝ้าระวังความปลอดภัยไซเบอร์ (Security Operations Center) พร้อมระบบตรวจจับการโจมตีอัตโนมัติด้วย AI SIEM',
     thumbnail: 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=600&q=80',
     pdfUrl: '/mock-tor-006.pdf',
-    status: 'Open for Bidding',
+    status: 'invitation_published',
     matchedScore: 78,
     properties: [
       { id: 'p18', property: 'มีผลงานติดตั้งระบบ SOC หรือ SIEM ให้กับหน่วยงานภาครัฐหรือสถาบันการเงิน', category: 'experience', required: true, fulfilledBySoftwareHouse: false },

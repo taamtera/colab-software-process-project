@@ -1,4 +1,7 @@
 'use client';
+import { procurementMethodLabel } from '@/lib/translate';
+import { useLanguage } from '@/lib/LanguageProvider';
+
 
 import React from 'react';
 import { TORContract } from '@/types';
@@ -12,7 +15,8 @@ import {
   ShieldCheck
 } from 'lucide-react';
 import { PDFThumbnail } from './PDFThumbnail';
-import { getAnnouncementStage, getStatusClasses, getStatusLabel } from '@/lib/torPresentation';
+import { ProjectStages } from './ProjectStages';
+import { getStatusClasses, getStatusLabel } from '@/lib/torPresentation';
 
 interface TORCardProps {
   contract: TORContract;
@@ -20,6 +24,7 @@ interface TORCardProps {
 }
 
 export const TORCard: React.FC<TORCardProps> = ({ contract, onSelect }) => {
+  const { t, language } = useLanguage();
   return (
     <div 
       onClick={() => onSelect(contract)}
@@ -31,20 +36,19 @@ export const TORCard: React.FC<TORCardProps> = ({ contract, onSelect }) => {
       </div>
 
       {/* Contract Core Info Section */}
-      <div className="flex-1 flex flex-col justify-between">
+      <div className="flex-1 min-w-0 flex flex-col justify-between">
         <div>
-          <div className="flex items-center justify-between gap-2 mb-1.5">
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-1.5">
             <span className="text-xs font-semibold px-2.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-              {getAnnouncementStage(contract.announcementType) || contract.category}
+              {procurementMethodLabel(contract.category, language)}
             </span>
-            <span className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-              Status:
-              <span className={`px-2 py-0.5 rounded-md border font-semibold ${getStatusClasses(contract.status, contract.announcementType)}`}>
-                {getStatusLabel(contract.status, contract.announcementType)}
+            <span className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5">{t("Status:")} <span className={`px-2 py-0.5 rounded-md border font-semibold ${getStatusClasses(contract.status)}`}>
+                {t(getStatusLabel(contract.status))}
               </span>
             </span>
           </div>
 
+          <ProjectStages project={contract} />
           <h3 className="text-base md:text-lg font-bold text-slate-900 dark:text-white group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-colors line-clamp-2 leading-snug mb-2">
             {contract.title}
           </h3>
@@ -56,7 +60,7 @@ export const TORCard: React.FC<TORCardProps> = ({ contract, onSelect }) => {
             </div>
             <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
               <Calendar className="w-3.5 h-3.5 shrink-0" />
-              <span>Published: {contract.publishedAt || contract.postingDate}</span>
+              <span>{t("Published:")} {contract.statusPublishedAt || contract.publishedAt || contract.postingDate}</span>
             </div>
           </div>
         </div>
@@ -64,26 +68,26 @@ export const TORCard: React.FC<TORCardProps> = ({ contract, onSelect }) => {
         {/* Price Tag */}
         <div className="flex items-center justify-between pt-3 border-t border-slate-200 dark:border-slate-800">
           <div>
-            <span className="text-[10px] font-medium text-slate-400 block uppercase">Procurement Method</span>
-            <span className="text-sm font-extrabold text-slate-800 dark:text-slate-100">{typeof contract.procurementMethod === 'string' ? contract.procurementMethod : contract.category}</span>
+            <span className="text-[10px] font-medium text-slate-400 block uppercase">{t("Procurement Method")}</span>
+            <span className="text-sm font-extrabold text-slate-800 dark:text-slate-100">{procurementMethodLabel(typeof contract.procurementMethod === 'string' ? contract.procurementMethod : contract.category, language)}</span>
           </div>
           
           <div className="flex items-center gap-1 text-xs font-semibold text-slate-500 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200 group-hover:translate-x-1 transition-all">
-            <span>ดูรายละเอียด TOR & PDF</span>
+            <span>{t('View project and document')}</span>
             <ArrowUpRight className="w-4 h-4" />
           </div>
         </div>
       </div>
 
       {/* Right Section: คุณสมบัติ */}
-      <div className="w-full lg:w-64 shrink-0 bg-slate-50 dark:bg-slate-950/80 p-3 rounded-md border border-slate-200 dark:border-slate-800 flex flex-col justify-between">
+      {contract.properties.length > 0 && <div className="w-full lg:w-64 shrink-0 bg-slate-50 dark:bg-slate-950/80 p-3 rounded-md border border-slate-200 dark:border-slate-800 flex flex-col justify-between">
         <div>
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-bold text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
               <ShieldCheck className="w-3.5 h-3.5 text-slate-400" />
-              <span>คุณสมบัติ (Requirements)</span>
+              <span>{t("Requirements")}</span>
             </span>
-            <span className="text-[10px] text-slate-400 font-mono">Vertex AI</span>
+
           </div>
 
           <div className="space-y-1.5">
@@ -101,19 +105,18 @@ export const TORCard: React.FC<TORCardProps> = ({ contract, onSelect }) => {
             ))}
             {contract.properties.length > 3 && (
               <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium italic pl-5">
-                +{contract.properties.length - 3} คุณสมบัติเพิ่มเติม...
-              </p>
+                +{contract.properties.length - 3}{t("more requirements...")} </p>
             )}
           </div>
         </div>
 
         <div className="mt-3 pt-2 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-[11px]">
-          <span className="text-slate-500 dark:text-slate-400">TOR status:</span>
-          <span className={`px-2 py-0.5 rounded-md border font-semibold ${getStatusClasses(contract.status, contract.announcementType)}`}>
-            {getStatusLabel(contract.status, contract.announcementType)}
+          <span className="text-slate-500 dark:text-slate-400">{t("TOR status:")}</span>
+          <span className={`px-2 py-0.5 rounded-md border font-semibold ${getStatusClasses(contract.status)}`}>
+            {t(getStatusLabel(contract.status))}
           </span>
         </div>
-      </div>
+      </div>}
 
     </div>
   );

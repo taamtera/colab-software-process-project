@@ -2,6 +2,7 @@ import { findCompanyById, replaceCompanyTagAssignments } from '../repositories/c
 import { createControlledTag, listControlledTags } from '../repositories/tag.repository.mjs';
 import { replaceTorTagAssignments } from '../repositories/tor.repository.mjs';
 import { httpError } from '../utils/http-error.mjs';
+import { serializeTor } from '../serializers/tor.serializer.mjs';
 import { TAG_CATEGORIES, validateCompanyTagAssignments, validateCreateTag, validateTorTagAssignments } from '../validators/tag.validators.mjs';
 
 export async function list(request, response) {
@@ -38,9 +39,9 @@ export async function replaceCompanyAssignments(request, response) {
 
 export async function replaceTorAssignments(request, response) {
   const assignments = validateTorTagAssignments(request.body);
-  const tor = await replaceTorTagAssignments(request.params.torId, assignments, request.user.id);
+  const tor = await replaceTorTagAssignments(request.params.projectId, assignments, request.user.id);
   if (!tor) {
     throw httpError(404, 'TOR_NOT_FOUND', 'The TOR does not exist.');
   }
-  response.json({ tor });
+  response.json({ tor: serializeTor(tor) });
 }

@@ -1,11 +1,8 @@
-import { TORContract, TORRequirement } from '@/types';
+import { TORContract, TORRequirement, ProjectFields } from '@/types';
 import { resolveApiUrl } from './api';
 
-interface BackendTor {
-  _id?: string;
-  id?: string;
-  templateId?: string | null;
-  projectId?: string | null;
+export interface BackendTor extends Partial<ProjectFields> {
+  projectId: string;
   sourceId?: string | null;
   departmentId?: string | null;
   title?: string | null;
@@ -19,7 +16,6 @@ interface BackendTor {
   documentUrl?: string | null;
   thumbnail?: string | null;
   procurementMethod?: string | Record<string, unknown> | null;
-  announcementType?: string | Record<string, unknown> | null;
   category?: string | null;
   status?: string | null;
   budget?: {
@@ -31,9 +27,6 @@ interface BackendTor {
     requirementLevel?: 'required' | 'preferred' | 'informational';
     evidence?: string | null;
   }>;
-  itemParams?: {
-    templateType?: string | null;
-  };
 }
 
 interface BackendTorListResponse {
@@ -51,10 +44,8 @@ function textValue(value: string | Record<string, unknown> | null | undefined) {
   return String(value?.name || value?.label || value?.code || value?.id || '');
 }
 
-function formatBudget(budget: BackendTor['budget']) {
-  const amount = budget?.maxAmount ?? budget?.minAmount;
-  if (typeof amount !== 'number') return 'Not specified';
-  return `${amount.toLocaleString('en-US')} THB`;
+function formatBudget(amount: number | null) {
+  return amount === null ? 'Not specified' : `${amount.toLocaleString('en-US')} THB`;
 }
 
 function mapRequirements(tor: BackendTor): TORRequirement[] {
@@ -67,22 +58,33 @@ function mapRequirements(tor: BackendTor): TORRequirement[] {
 }
 
 export function toTorContract(tor: BackendTor): TORContract {
+  if (typeof tor.projectId !== 'string' || !tor.projectId) throw new Error('Project ID must be a non-empty string.');
   const title = tor.title?.trim() || 'Untitled TOR announcement';
   const publicationDate = tor.publishedAt || '';
   const documentUrl = tor.documentUrl || tor.url || null;
 
   return {
-    id: tor._id || tor.id || tor.templateId || `${tor.sourceId || 'tor'}-${title}`,
-    templateId: tor.templateId || null,
-    projectId: tor.projectId || null,
+    id: tor.projectId,
+    projectId: tor.projectId,
+    scope: tor.scope ?? 'department',
+    identityScope: tor.identityScope ?? (tor.projectId.startsWith('P') ? 'plan' : 'project'),
+    linkedProjectId: tor.linkedProjectId ?? null,
+    statusPublishedAt: tor.statusPublishedAt ?? null,
+    statusOrderAmbiguous: tor.statusOrderAmbiguous === true,
+    stageObservations: tor.stageObservations ?? {},
+    biddingOpenVerified: tor.biddingOpenVerified === true,
+    titleMatchedKeywords: tor.titleMatchedKeywords ?? [],
+    thumbnailSourceUrl: tor.thumbnailSourceUrl ?? null,
+    channelParams: tor.channelParams ?? {}, itemParams: tor.itemParams ?? {},
+    firstSeenAt: tor.firstSeenAt ?? null, lastSeenAt: tor.lastSeenAt ?? null,
     sourceId: tor.sourceId || null,
     title,
     contractOwner: tor.departmentName || tor.sourceId || 'e-GP',
     departmentId: tor.departmentId || null,
     departmentName: tor.departmentName || null,
     publisherType: 'Ministry',
-    price: tor.budget?.maxAmount || tor.budget?.minAmount || 0,
-    priceFormatted: formatBudget(tor.budget),
+    price: tor.budget?.maxAmount ?? tor.budget?.minAmount ?? null,
+    priceFormatted: formatBudget(tor.budget?.maxAmount ?? tor.budget?.minAmount ?? null),
     startDate: tor.projectStartAt || '',
     endDate: tor.projectEndAt || '',
     postingDate: publicationDate,
@@ -90,7 +92,6 @@ export function toTorContract(tor: BackendTor): TORContract {
     submissionDeadline: tor.submissionDeadline || 'Not specified',
     category: textValue(tor.procurementMethod) || 'Government procurement',
     procurementMethod: tor.procurementMethod || null,
-    announcementType: tor.itemParams?.templateType || tor.announcementType || null,
     description: tor.description || '',
     properties: mapRequirements(tor),
     pdfUrl: documentUrl || '',
@@ -106,31 +107,23 @@ export function toTorContract(tor: BackendTor): TORContract {
       aiModel: 'Not evaluated',
       evaluatedAt: ''
     },
-    status: tor.status || 'open',
-    thumbnail: tor.thumbnail || undefined
+    status: tor.status || 'unknown',
+    thumbnail: `/api/thumbnail/${encodeURIComponent(tor.projectId)}`
   };
 }
 
-export async function listTors(): Promise<{ items: TORContract[]; total: number }> {
-  const endpoint = resolveApiUrl('/api/tors?status=&page=1&limit=100');
-  if (!endpoint) {
-    throw new Error('The TOR API URL is not configured.');
-  }
-
-  let response: Response;
-  try {
-    response = await fetch(endpoint, { credentials: 'include', cache: 'no-store' });
-  } catch {
-    throw new Error('Could not reach the TOR backend.');
-  }
-
-  if (!response.ok) {
-    throw new Error(`The TOR backend returned HTTP ${response.status}.`);
-  }
-
-  const body = await response.json() as BackendTorListResponse;
-  return {
-    items: (body.items || []).map(toTorContract),
-    total: body.pagination?.total ?? body.items?.length ?? 0
-  };
+export interface DiscoveryFacets {
+  departments: Array<{ value: string; name: string | null; count: number }>;
+  methods: Array<{ value: string; count: number }>;
+}
+export async function listTors(options: Record<string, string | number> = {}, signal?: AbortSignal) {
+  const params = new URLSearchParams({ page: '1', limit: '25' });
+  Object.entries(options).forEach(([key, value]) => { if (value !== '') params.set(key, String(value)); });
+  const endpoint = resolveApiUrl(`/api/tors?${params}`)!;
+  const response = await fetch(endpoint, { credentials: 'include', cache: 'no-store', signal });
+  if (!response.ok) throw new Error(`The TOR backend returned HTTP ${response.status}.`);
+  const body = await response.json() as BackendTorListResponse & { facets?: DiscoveryFacets; totalAllProjects?: number };
+  return { items: (body.items || []).map(toTorContract), total: body.pagination.total,
+    pagination: body.pagination, totalAllProjects: body.totalAllProjects ?? body.pagination.total,
+    facets: body.facets ?? { departments: [], methods: [] } };
 }

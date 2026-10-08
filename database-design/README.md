@@ -1,80 +1,52 @@
-# TOR Software — MongoDB Atlas Database Package
+# TOR Software database design
 
-This package converts the original e-GP relational draft into a MongoDB Atlas design for the complete TOR Software product.
+The current crawler flow uses three collections:
 
-It covers:
+| Collection | Purpose | Identity |
+| --- | --- | --- |
+| `tor_announcements` | One project with retained RSS stage observations | Unique string `projectId` |
+| `thumbnails` | Base64 WebP thumbnails tied to the current document | Unique string `projectId` |
+| `ingestion_runs` | Department/stage requests, raw counts, keyword outcomes, completeness | Internal MongoDB `_id` |
 
-- TOR collection from e-GP and other public sources
-- current TOR records and version history
-- source documents and original links
-- users, software-house profiles, and qualifications
-- controlled tags for TOR requirements and company capabilities
-- registration, verification tokens, login sessions, and security audit logs
-- AI requirement evaluation and company matching
-- saved TORs, recommendations, and notifications
-- crawler execution history and error tracking
-- isolated raw crawler staging with TTL retention
+[Schema](docs/schema.md) contains field types and status mappings. [Team handoff](docs/team-handoff.md) describes application responsibilities. The existing authentication, company, tagging, and AI collections are separate application features; the ingestion flow does not write to them.
 
-## Why MongoDB Atlas
-| `tor_versions` | Immutable history when a TOR changes |
-| `ingestion_runs` | Crawler requests, counts, failures, and raw-payload locations |
-| `raw_ingestion_items` | Temporary crawler items, validation errors, and normalization status |
-| `rss_query_state` | RSS query completeness, splitting, and retry state |
-| `users` | Login identity, role, company membership, and preferences |
-| `auth_tokens` | Hashed email-verification, password-reset, and invitation tokens |
-| `sessions` | Hashed refresh sessions with expiration and revocation state |
-| `audit_logs` | Registration, login, password, status, and verification events |
-| `companies` | Software-house profile, technologies, and qualifications |
-| `tags` | Controlled tag names, categories, aliases, and lifecycle status |
-| `ai_evaluations` | AI-extracted TOR requirements and observations |
-| `company_matches` | Company-to-TOR compatibility scores and explanations |
-| `saved_tors` | User bookmarks and follow-up notes |
-| `notifications` | New match, update, and deadline alert delivery records |
+Projects and thumbnails use `projectId` strings throughout the frontend and API. Plan IDs remain separate from numeric procurement IDs. Top-level `templateId`, `announcementType`, and `projectKey` are retired on projects. Raw identifiers stay in `itemParams`. There is no Bangkok restriction; the software/IT title filter remains part of ingestion.
 
-The detailed model and relationships are in `docs/schema.md`.
+## New database setup
 
-The concise setup and responsibility contract for teammates is in `docs/team-handoff.md`.
+1. Install dependencies with `npm install`.
+2. Copy `.env.example` to `.env` and configure `MONGODB_URI` and `MONGODB_DB_NAME`.
+3. Run `npm run db:check`.
+4. Run `npm run db:setup` to create validators and indexes, including unique string `projectId` indexes on both projects and thumbnails.
+5. Run `npm run db:verify`.
 
-## Atlas Setup
+`db:setup` retains the application's existing collection definitions. It checks for unmigrated identities before changing the database. `db:seed` writes only optional non-RSS application demo data.
 
-1. Create a free MongoDB Atlas cluster.
-2. Create a database user. This is separate from the email used to sign in to Atlas.
-3. Add the development machine's IP address to the Atlas IP access list.
-4. Copy the Atlas application connection string.
-5. Copy `.env.example` to `.env` and replace the placeholders.
-6. Install the Node.js dependency with `npm install`.
-7. Test access with `npm run db:check`.
-8. Create collections, validation rules, and indexes with `npm run db:setup`.
-9. Seed non-RSS application data with `npm run db:seed`.
-10. Feed RSS data through the simplified RSS ingestion schema.
+## Existing database migration
 
-## Live Ingestion
+The crawler workflow does not migrate old data or create indexes. The database owner performs this separately:
 
-No local MongoDB database installation is required. Node.js is only used to run these setup scripts and will also be used by the future backend.
+1. Pause ingestion and other project/thumbnail writers.
+2. Run `npm run db:migrate` for a read-only preview. Resolve reported missing identities, RSS stage codes, non-string department IDs, and references to duplicate `_id` records first. Raw document `itemParams.templateType` is preserved but does not establish an RSS stage; stage metadata must come from the RSS status or request/announcement fields.
+3. Review the merge/discard counts. The migration keeps one project per string `projectId`, the latest observation per stage, the earliest `firstSeenAt`, and the latest `lastSeenAt`. Different latest stages on the same date remain ambiguous. Plan IDs never merge into linked numeric IDs.
+4. Apply with a new backup filename:
 
-The seed command creates only sources, organizations, companies, users, and audit data. It does not write to RSS crawler collections.
+   ```powershell
+   npm run db:migrate -- --apply --backup project-migration-backup.ejson
+   ```
 
-## Security Rules
+5. Run `npm run db:setup`, then `npm run db:verify`, before resuming ingestion.
 
+Apply writes an EJSON backup of all three collections, their validators, and indexes, without overwriting a previous backup. The project/thumbnail rewrite uses an atomic transaction and requires a replica set or mongos (including Atlas). It retains a surviving original `_id`, moves raw template IDs into `itemParams`, removes retired identity and enrichment fields without placeholders, and discards duplicate or stale images whose source URL no longer matches the current document. Unresolved source identities or application references block the migration. Existing ingestion logs remain unchanged.
 
-## Main Design Decisions
+Retired identity indexes are removed after the backup and before the transaction; full unique `projectId` indexes are created after it commits. If a later step fails, keep writers paused and retain the backup. Rerun the preview and finish setup/verification; use the backup for manual restoration if the merge must be reversed. The backup contains source documents and must not be committed or shared publicly.
 
+## Local verification
 
-## Handoff to the Backend Developer
+Run `npm test` for migration contract tests and `npm run handoff:verify` for package checks. Database setup and verification commands require a configured MongoDB connection. The frontend refreshes projects and thumbnails independently every 30 seconds, and does not assume verified open bidding from an invitation announcement.
 
-Before sharing the package, run `npm run handoff:verify`. Share only the files listed in `docs/team-handoff.md`; never include `.env` or `node_modules/`.
+## Enrichment removal
 
-The crawler should use the same collection names and should write the current RSS-stage payloads as follows:
+The 13 removed enrichment fields listed in the schema must be absent, including null values and empty arrays. The API and frontend omit them; the migration no longer recreates them. The revised project validator rejects them when database setup is applied. Keep the external workflow's enrichment step disabled.
 
-1. Insert an `ingestion_runs` document with `sourceId`, `fetchedAt`, `request`, `reportedCount`, `itemsReceived`, and `complete`.
-2. Insert each feed item into `tor_announcements` with `sourceId`, `departmentId`, `projectId`, `templateId`, `title`, `description`, `publishedAt`, `url`, `procurementMethod`, `announcementType`, `channelParams`, `itemParams`, `firstSeenAt`, and `lastSeenAt`.
-3. Use the unique `sourceId + url` index to prevent duplicate feed items.
-4. Add validation and normalization stages later before enabling downstream TOR, AI, matching, or notification workflows.
-
-Official references:
-
-- MongoDB Atlas connection requirements: https://www.mongodb.com/docs/atlas/connect-to-database-deployment/
-- MongoDB schema validation: https://www.mongodb.com/docs/manual/core/schema-validation/
-- MongoDB unique compound indexes: https://www.mongodb.com/docs/manual/core/index-unique/create-compound/
-- MongoDB Node.js driver: https://www.mongodb.com/docs/drivers/node/current/get-started/
-
+Run `npm run db:verify-enrichment-removed` to check all project documents without writing anything. It returns each field's remaining count and fails if any project still contains a removed field. A successful zero count confirms physical field absence rather than only hiding it in the frontend.

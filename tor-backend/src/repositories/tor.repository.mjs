@@ -1,23 +1,20 @@
 import { getDatabase } from '../config/database.mjs';
 import { toObjectId } from '../utils/object-id.mjs';
 import { assertActiveTagIds } from './tag.repository.mjs';
+import { buildDiscoveryQuery, METHOD_VALUE } from './tor-query.mjs';
 
 function tors() {
   return getDatabase().collection('tor_announcements');
 }
 
-export async function findTorById(torId) {
-  return tors().findOne({ _id: toObjectId(torId, 'torId') });
-}
-
-export async function findTorByTemplateId(templateId) {
-  return tors().findOne({ templateId });
+export async function findTorByProjectId(projectId) {
+  return tors().findOne({ projectId });
 }
 
 export async function updateTor(torId, changes, updatedByUserId) {
   const now = new Date();
   return tors().findOneAndUpdate(
-    { _id: toObjectId(torId, 'torId') },
+    { projectId: torId },
     {
       $set: {
         ...changes,
@@ -31,7 +28,14 @@ export async function updateTor(torId, changes, updatedByUserId) {
 
 export async function listTors({
   search = null,
-  status = 'open',
+  departmentId = null,
+  stage = null,
+  stageScope = 'latest',
+  procurementMethod = null,
+  fromDate = null,
+  toDate = null,
+  sort = null,
+  status = null,
   category = null,
   tagIds = [],
   sourceId = null,
@@ -44,16 +48,11 @@ export async function listTors({
 } = {}) {
   const safePage = Math.max(1, Number.parseInt(page, 10) || 1);
   const safeLimit = Math.min(100, Math.max(1, Number.parseInt(limit, 10) || 20));
-  const filter = {};
-
-  if (search?.trim()) {
-    filter.$text = { $search: search.trim() };
-  }
+  const discovery = buildDiscoveryQuery({ search, departmentId, stage, stageScope, procurementMethod, fromDate, toDate, sort });
+  const filter = discovery.filter;
 
   if (status) {
-    filter.status = status === 'open'
-      ? { $in: ['open', null] }
-      : status;
+    filter.status = status;
   }
 
   if (category) {
@@ -91,22 +90,33 @@ export async function listTors({
     filter.submissionDeadline = { $gte: new Date(deadlineAfter) };
   }
 
-  const projection = search?.trim() ? { score: { $meta: 'textScore' } } : {};
-  const sort = search?.trim()
-    ? { score: { $meta: 'textScore' }, submissionDeadline: 1 }
-    : { submissionDeadline: 1, publishedAt: -1 };
-  const cursor = tors()
-    .find(filter, { projection })
-    .sort(sort)
-    .skip((safePage - 1) * safeLimit)
-    .limit(safeLimit);
-  const [items, total] = await Promise.all([
+  const cursor = tors().aggregate([
+    { $match: filter },
+    ...(discovery.ranking ? [{ $set: { _searchRank: discovery.ranking } }] : []),
+    { $sort: discovery.sort },
+    { $skip: (safePage - 1) * safeLimit }, { $limit: safeLimit },
+    { $unset: '_searchRank' }
+  ]);
+  const [items, total, metadata] = await Promise.all([
     cursor.toArray(),
-    tors().countDocuments(filter)
+    tors().countDocuments(filter),
+    tors().aggregate([{ $facet: {
+      departments: [
+        { $group: { _id: { $ifNull: ['$departmentId', ''] }, name: { $max: '$departmentName' }, count: { $sum: 1 } } },
+        { $project: { _id: 0, value: { $cond: [{ $eq: ['$_id', ''] }, '__unknown__', '$_id'] }, name: 1, count: 1 } }
+      ],
+      methods: [
+        { $group: { _id: { $ifNull: [METHOD_VALUE, ''] }, count: { $sum: 1 } } },
+        { $project: { _id: 0, value: { $cond: [{ $eq: ['$_id', ''] }, '__unknown__', '$_id'] }, count: 1 } }
+      ],
+      total: [{ $count: 'count' }]
+    } }]).next()
   ]);
 
   return {
     items,
+    facets: { departments: metadata.departments, methods: metadata.methods },
+    totalAllProjects: metadata.total[0]?.count ?? 0,
     pagination: {
       page: safePage,
       limit: safeLimit,
@@ -132,7 +142,7 @@ export async function replaceTorTagAssignments(torId, assignments, reviewedByUse
   }));
 
   return tors().findOneAndUpdate(
-    { _id: toObjectId(torId, 'torId') },
+    { projectId: torId },
     { $set: { tagAssignments, updatedAt: now } },
     { returnDocument: 'after' }
   );

@@ -7,4 +7,4 @@ function handle(controller) {
 
 export const thumbnailRouter = Router();
 
-thumbnailRouter.get('/:templateId', handle(thumbnailController.getByTemplateId));
+thumbnailRouter.get('/:projectId', handle(thumbnailController.getByProjectId));

@@ -1,4 +1,6 @@
 'use client';
+import { useLanguage } from '@/lib/LanguageProvider';
+
 
 import React from 'react';
 import {
@@ -31,6 +33,7 @@ const StatCard: React.FC<StatCardProps> = ({
   trendValue,
   color = 'sky'
 }) => {
+  const { t } = useLanguage();
   const colorClasses = {
     sky: 'bg-sky-50 dark:bg-sky-900/20 border-sky-200 dark:border-sky-800 text-sky-600 dark:text-sky-400',
     emerald: 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400',
@@ -71,75 +74,76 @@ const StatCard: React.FC<StatCardProps> = ({
 };
 
 export const DashboardStats: React.FC = () => {
+  const { t } = useLanguage();
   const stats = [
     {
       icon: <FileCheckIcon className="w-5 h-5" />,
-      label: 'Active TORs This Month',
+      label: t("Active TORs This Month"),
       value: '24',
-      subtext: '+3 new postings',
+      subtext: t("+3 new postings"),
       trend: 'up' as const,
       trendValue: '+14%',
       color: 'sky' as const
     },
     {
       icon: <DollarSign className="w-5 h-5" />,
-      label: 'Total Market Value',
+      label: t("Total Market Value"),
       value: '142.5M',
-      subtext: 'THB',
+      subtext: t("THB"),
       trend: 'up' as const,
       trendValue: '+8.2%',
       color: 'emerald' as const
     },
     {
       icon: <Target className="w-5 h-5" />,
-      label: 'Avg AI Match Score',
+      label: t("Avg AI Match Score"),
       value: '86.3%',
-      subtext: '±4.2 points',
+      subtext: t("\u00b14.2 points"),
       trend: 'up' as const,
       trendValue: '+2.1%',
       color: 'violet' as const
     },
     {
       icon: <Users className="w-5 h-5" />,
-      label: 'Participating Vendors',
+      label: t("Participating Vendors"),
       value: '387',
-      subtext: '+32 this quarter',
+      subtext: t("+32 this quarter"),
       trend: 'up' as const,
       trendValue: '+9%',
       color: 'amber' as const
     },
     {
       icon: <Clock className="w-5 h-5" />,
-      label: 'Avg Bidding Period',
-      value: '14 days',
-      subtext: 'Until deadline',
+      label: t("Avg Bidding Period"),
+      value: t("14 days"),
+      subtext: t("Until deadline"),
       trend: 'neutral' as const,
-      trendValue: '-2 days',
+      trendValue: t("-2 days"),
       color: 'rose' as const
     },
     {
       icon: <Award className="w-5 h-5" />,
-      label: 'Successful Bids',
+      label: t("Successful Bids"),
       value: '89',
-      subtext: 'From 156 total',
+      subtext: t("From 156 total"),
       trend: 'up' as const,
       trendValue: '+12%',
       color: 'sky' as const
     },
     {
       icon: <Zap className="w-5 h-5" />,
-      label: 'AI Crawl Updates',
+      label: t("AI Crawl Updates"),
       value: '1,204',
-      subtext: 'Last 30 days',
+      subtext: t("Last 30 days"),
       trend: 'up' as const,
       trendValue: '+18%',
       color: 'emerald' as const
     },
     {
       icon: <PieChart className="w-5 h-5" />,
-      label: 'Top Category',
+      label: t("Top Category"),
       value: 'Web & Mobile',
-      subtext: '42% of all TORs',
+      subtext: t("42% of all TORs"),
       trend: 'neutral' as const,
       trendValue: 'Stable',
       color: 'violet' as const
@@ -149,9 +153,7 @@ export const DashboardStats: React.FC = () => {
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="text-sm font-bold text-slate-900 dark:text-white mb-4 uppercase tracking-wider">
-          📊 Market Intelligence Dashboard
-        </h2>
+        <h2 className="text-sm font-bold text-slate-900 dark:text-white mb-4 uppercase tracking-wider">{t("📊 Market Intelligence Dashboard")} </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {stats.map((stat, idx) => (
             <StatCard
@@ -170,9 +172,7 @@ export const DashboardStats: React.FC = () => {
 
       {/* Category Distribution Chart Mock */}
       <div className="theme-card p-5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
-        <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-4">
-          📈 TOR Distribution by Category
-        </h3>
+        <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-4">{t("📈 TOR Distribution by Category")} </h3>
         <div className="space-y-3">
           {[
             { name: 'Web & Mobile', value: 42, bar: 'bg-sky-500' },
@@ -203,33 +203,21 @@ export const DashboardStats: React.FC = () => {
       {/* Performance Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="theme-card p-5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
-          <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
-            🏆 Top Procurement Method
-          </p>
+          <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{t("🏆 Top Procurement Method")} </p>
           <p className="text-xl font-bold text-slate-900 dark:text-white">e-Bidding (e-GP)</p>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            69 active TORs • ฿98.4M total
-          </p>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{t("69 active TORs • ฿98.4M total")} </p>
         </div>
 
         <div className="theme-card p-5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
-          <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
-            ⚡ Highest Demand Tech
-          </p>
+          <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{t("⚡ Highest Demand Tech")} </p>
           <p className="text-xl font-bold text-slate-900 dark:text-white">Next.js / React</p>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Required in 34 TORs • 71% match rate
-          </p>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{t("Required in 34 TORs • 71% match rate")} </p>
         </div>
 
         <div className="theme-card p-5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
-          <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
-            🎯 Vendor Satisfaction
-          </p>
+          <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{t("🎯 Vendor Satisfaction")} </p>
           <p className="text-xl font-bold text-slate-900 dark:text-white">4.7 / 5.0</p>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Based on 234 reviews • Highly recommended
-          </p>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{t("Based on 234 reviews • Highly recommended")} </p>
         </div>
       </div>
     </div>

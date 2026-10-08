@@ -5,12 +5,13 @@ Author: taam
 ## What Is Ready
 
 - MongoDB Atlas connection and environment configuration
-- 18 collections with validation rules and indexes
+- three ingestion collections with string project identities, validation rules, and unique indexes
+- separate application collections for authentication, profiles, tags, and AI
 - controlled TOR and company profile tagging with aliases and review metadata
 - schema and indexes ready for live ingestion
 - optional non-RSS demo seed data
-- isolated crawler staging and ingestion history
-- automatic TTL retention for raw staging records
+- department/stage request logs and completeness
+- optional legacy staging and version collections outside the crawler flow
 - repositories in the Express backend for database access
 - Docker services for the backend and crawler
 
@@ -29,7 +30,7 @@ The backend/authentication developer owns HTTP routes, password hashing, token g
 5. Put that user's Atlas URI in `MONGODB_URI` inside `.env`.
 6. Keep `MONGODB_DB_NAME` set to the approved database.
 7. Run `npm run db:check`.
-8. Run `npm run db:setup`.
+8. For existing data, preview and apply `db:migrate` with a backup as described in the README, then run `npm run db:setup`.
 9. Run `npm run db:seed` for non-RSS application sample data only.
 10. Run `npm run db:verify`.
 
@@ -69,15 +70,19 @@ Set `expiresAt` only when the team has approved a retention date. Omit it for re
 
 ## TOR and Crawler Contract
 
-- Treat `raw_ingestion_items` as temporary untrusted staging data.
-- Read each source's `rawRetentionDays` value when calculating staging `expiresAt`.
-- Set `triggeredBy` to `schedule`, `manual`, `test`, or `retry` on every ingestion run.
-- Upsert projects using `sourceId + externalProjectId`.
-- Upsert announcements using the unique `sourceId + announcementKey` combination. Do not use RSS `guid` or project ID alone.
-- Create a `tor_versions` snapshot only when `contentHash` changes.
-- Keep original source URLs and document checksums for verification.
-- Enable AI evaluation, matching, and notifications only after clean normalization.
-- Keep the crawler disabled until a source adapter is intentionally being tested.
+- The final workflow writes only `tor_announcements`, `thumbnails`, and `ingestion_runs`.
+- Upsert projects and thumbnails by string `projectId`. Keep department IDs with leading zeros intact.
+- Keep plan IDs separate from numeric project IDs, even when `linkedProjectId` links them.
+- Retain raw template/document identifiers in `itemParams`; omit top-level `templateId`, `projectKey`, and `announcementType` from projects.
+- Preserve `firstSeenAt`; refresh `lastSeenAt` on ingestion.
+- Keep the latest observation per stage, not a full event history. Latest-date ties use `multiple_announcements_same_day` and `statusOrderAmbiguous: true`; display each tied stage separately.
+- Omit all 13 retired enrichment fields listed in `schema.md`. Do not write nulls, empty arrays, or default objects for them; the API, migration, and revised validator enforce their removal.
+- Keep `biddingOpenVerified: false` until there is independent verification.
+- Omit `locationFilter` entirely. Coverage is nationwide; the software/IT title filter still applies. Keep external opend enrichment disabled.
+- Log department/stage requests with raw feed counts, keyword matched/rejected outcomes, and completeness. `announcementType` is allowed request metadata in these logs.
+- The workflow does not migrate documents or create indexes. The database owner runs the backup-first migration and then setup/verification.
+- Serve thumbnails through `/api/thumbnail/:projectId` only when their `sourceUrl` matches the project's current `documentUrl`.
+- Frontend projects and thumbnails refresh independently so a later image can appear after the project.
 
 ## AI and Notification Queue Contract
 
@@ -110,6 +115,8 @@ Set `expiresAt` only when the team has approved a retention date. Omit it for re
 | `npm run handoff:verify` | Verify that the shareable package contains required safe files |
 | `npm run db:check` | Confirm Atlas connectivity |
 | `npm run db:setup` | Create or update validators and indexes |
+| `npm run db:migrate` | Preview project identity migration; apply explicitly with a backup |
+| `npm run db:verify-enrichment-removed` | Read-only field absence check across all projects |
 | `npm run db:verify` | Check collections, validators, and indexes without deleting data |
 | `npm run db:seed` | Seed sources, organizations, companies, users, and audit data only |
 
@@ -121,6 +128,7 @@ Set `expiresAt` only when the team has approved a retention date. Omit it for re
 - `package.json` and `package-lock.json`
 - `docs/`
 - `scripts/`
+- `tests/`
 
 Never share `.env`, `node_modules/`, personal Atlas passwords, raw access tokens, or a ZIP containing those files.
 
@@ -128,7 +136,7 @@ Never share `.env`, `node_modules/`, personal Atlas passwords, raw access tokens
 
 - `npm run handoff:verify` passes.
 - `npm run db:check` connects using the teammate's own credentials.
-- `npm run db:verify` reports all 18 collections and passes.
+- `npm run db:verify` passes, including both full unique `projectId` indexes and the three ingestion schemas.
 - Authentication code uses hashes and the documented status values.
 - AI and notification workers use the documented retry fields and ready-work indexes.
 - Ingestion writes only to the approved database configured by `MONGODB_DB_NAME`.

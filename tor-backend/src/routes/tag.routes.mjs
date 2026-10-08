@@ -12,4 +12,4 @@ export const tagRouter = Router();
 tagRouter.get('/', handle(tagController.list));
 tagRouter.post('/', authenticate, authorize('system_admin'), handle(tagController.create));
 tagRouter.put('/companies/:companyId', authenticate, handle(tagController.replaceCompanyAssignments));
-tagRouter.put('/tors/:torId', authenticate, authorize('project_manager', 'system_admin'), handle(tagController.replaceTorAssignments));
+tagRouter.put('/tors/:projectId', authenticate, authorize('project_manager', 'system_admin'), handle(tagController.replaceTorAssignments));

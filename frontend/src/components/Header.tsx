@@ -1,4 +1,6 @@
 'use client';
+import { useLanguage } from '@/lib/LanguageProvider';
+
 
 import React from 'react';
 import { 
@@ -35,9 +37,10 @@ export const Header: React.FC<HeaderProps> = ({
   themeMode,
   onToggleTheme
 }) => {
+  const { t, language, setLanguage } = useLanguage();
   return (
     <header className="sticky top-0 z-40 w-full border-b border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md transition-colors">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap items-center justify-between gap-3">
         
         {/* Brand / Logo — keep blue on logo icon only */}
         <div className="flex items-center gap-2 cursor-pointer " onClick={() => setActiveTab('dashboard')}>
@@ -71,51 +74,51 @@ export const Header: React.FC<HeaderProps> = ({
 </svg>
           </div>
           <div>
-            <div className="flex-1 items-center gap-2 w-max">
+            <div className="flex-1 items-center gap-2">
               <span className="font-bold text-base md:text-lg text-slate-900 dark:text-white tracking-tight">
-                Bangkok TOR<span className="text-slate-600 dark:text-slate-300"> Intelligence</span>
+                Thailand TOR<span className="hidden sm:inline text-slate-600 dark:text-slate-300"> Intelligence</span>
               </span>
             </div>
-            <p className="text-xs text-slate-400 dark:text-slate-500 hidden sm:block">Bangkok TOR Discovery, Evaluation & Matching</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500 hidden sm:block">{t("TOR Discovery, Evaluation & Matching")}</p>
           </div>
         </div>
 
         {/* Navigation Tabs */}
-        <nav className="hidden md:flex items-center gap-1 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-lg border border-slate-200 dark:border-slate-700">
+        <nav className="order-3 w-full xl:order-none xl:w-auto flex overflow-x-auto items-center gap-1 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-lg border border-slate-200 dark:border-slate-700 [&>button]:shrink-0 [&>button]:whitespace-nowrap">
           <button
             onClick={() => setActiveTab('dashboard')}
-            className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
+            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-all ${
               activeTab === 'dashboard'
                 ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm border border-slate-200 dark:border-slate-700'
                 : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
             }`}
           >
             <Layers className="w-4 h-4" />
-            <span>Dash board</span>
+            <span>{t("Dashboard")}</span>
           </button>
 
           <button
             onClick={() => setActiveTab('find')}
-            className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
+            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-all ${
               activeTab === 'find'
                 ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm border border-slate-200 dark:border-slate-700'
                 : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
             }`}
           >
             <Sparkles className="w-4 h-4" />
-            <span>Find TORs</span>
+            <span>{t("Find TORs")}</span>
           </button>
 
           <button
             onClick={() => setActiveTab('recommendations')}
-            className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all relative ${
+            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-all relative ${
               activeTab === 'recommendations'
                 ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm border border-slate-200 dark:border-slate-700'
                 : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
             }`}
           >
             <Layers className="w-4 h-4" />
-            <span>Recommendation</span>
+            <span>{t("Recommendation")}</span>
             {notificationCount > 0 && (
               <span className="ml-1 px-1.5 py-0.2 text-[10px] font-bold bg-slate-700 dark:bg-slate-200 text-white dark:text-slate-800 rounded-full">
                 {notificationCount}
@@ -131,25 +134,34 @@ export const Header: React.FC<HeaderProps> = ({
                 onOpenAuth('login');
               }
             }}
-            className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
+            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-all ${
               activeTab === 'profile'
                 ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm border border-slate-200 dark:border-slate-700'
                 : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
             }`}
           >
             <Building2 className="w-4 h-4" />
-            <span>Company Profile</span>
+            <span>{t("Company Profile")}</span>
           </button>
         </nav>
 
         {/* Right side controls */}
         <div className="flex items-center gap-3">
+          <select
+            aria-label={t('Language')}
+            value={language}
+            onChange={event => setLanguage(event.target.value as 'en' | 'th')}
+            className="theme-input rounded-lg px-2 py-2 text-xs font-semibold"
+          >
+            <option value="en" lang="en">English</option>
+            <option value="th" lang="th">ไทย</option>
+          </select>
           
           {/* Theme Switcher */}
           <button
             onClick={onToggleTheme}
             className="p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors flex items-center justify-center"
-            title="Toggle Light/Dark Theme"
+            title={t("Toggle Light/Dark Theme")}
           >
             {themeMode === 'dark' ? (
               <Sun className="w-4 h-4 text-amber-400" />
@@ -164,7 +176,7 @@ export const Header: React.FC<HeaderProps> = ({
               <button 
                 onClick={() => setActiveTab('recommendations')}
                 className="relative p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors"
-                title="AI Match Notifications"
+                title={t("Notifications")}
               >
                 <Bell className="w-4 h-4" />
                 {notificationCount > 0 && (
@@ -186,7 +198,7 @@ export const Header: React.FC<HeaderProps> = ({
                   <p className="text-xs font-semibold text-slate-900 dark:text-white leading-tight truncate max-w-[140px]">
                     {currentUser.companyName}
                   </p>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Software House</p>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">{t("Software House")}</p>
                 </div>
               </div>
 
@@ -194,7 +206,7 @@ export const Header: React.FC<HeaderProps> = ({
               <button
                 onClick={onLogout}
                 className="p-2 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
-                title="Log out"
+                title={t("Log out")}
               >
                 <LogOut className="w-4 h-4" />
               </button>
@@ -203,16 +215,12 @@ export const Header: React.FC<HeaderProps> = ({
             <div className="flex items-center gap-2">
               <button
                 onClick={() => onOpenAuth('login')}
-                className="px-4 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg transition-all"
-              >
-                log in
-              </button>
+                className="px-3.5 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg transition-all"
+              >{t("Log In")} </button>
               <button
                 onClick={() => onOpenAuth('signin')}
-                className="px-4 py-1.5 text-xs font-semibold text-white bg-sky-600 hover:bg-sky-700 rounded-lg shadow-sm transition-all"
-              >
-                sign in
-              </button>
+                className="px-3.5 py-1.5 text-xs font-semibold text-white bg-sky-600 hover:bg-sky-700 rounded-lg shadow-sm transition-all"
+              >{t("Sign Up")} </button>
             </div>
           )}
         </div>

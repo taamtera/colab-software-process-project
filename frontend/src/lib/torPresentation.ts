@@ -1,115 +1,50 @@
-const ANNOUNCEMENT_STAGE_LABELS: Record<string, string> = {
-  P0: 'Procurement Plan',
-  '15': 'Reference Price',
-  B0: 'Draft TOR',
-  D0: 'Tender Open',
-  D1: 'Tender Cancelled',
-  D2: 'Tender Changed',
-  W0: 'Awarded',
-  W1: 'Award Cancelled',
-  W2: 'Award Changed'
+import { TORContract, StageCode } from '@/types';
+
+export const STAGE_STATUS: Record<StageCode, string> = {
+  P0: 'procurement_planned', '15': 'reference_price_published', B0: 'draft_tender_published',
+  D0: 'invitation_published', W0: 'award_published', D1: 'invitation_cancelled',
+  W1: 'award_cancelled', D2: 'invitation_amended', W2: 'award_amended'
 };
-
-export const ANNOUNCEMENT_STAGE_CODES = ['P0', '15', 'B0', 'D0', 'D1', 'D2', 'W0', 'W1', 'W2'];
-
-const STATUS_LABELS: Record<string, string> = {
-  draft: 'Draft',
-  open: 'Open',
-  closed: 'Closed',
-  cancelled: 'Cancelled',
-  awarded: 'Awarded',
-  'Open for Bidding': 'Open',
-  'Under AI Review': 'Under AI Review',
-  Matched: 'Matched',
-  Closed: 'Closed'
+export const ANNOUNCEMENT_STAGE_CODES = Object.keys(STAGE_STATUS) as StageCode[];
+const LABELS: Record<string, string> = {
+  procurement_planned: 'Procurement Plan', reference_price_published: 'Reference Price Published',
+  draft_tender_published: 'Draft Tender Published', invitation_published: 'Invitation Published',
+  award_published: 'Award Published', invitation_cancelled: 'Invitation Cancelled',
+  award_cancelled: 'Award Cancelled', invitation_amended: 'Invitation Amended',
+  award_amended: 'Award Amended', multiple_announcements_same_day: 'Multiple stages on the same day',
+  unknown: 'Stage unavailable'
 };
-
-export function getCode(value: string | Record<string, unknown> | null | undefined) {
-  if (typeof value === 'string') {
-    return value.trim().toUpperCase();
-  }
-  const nestedValue = value?.code || value?.id || value?.value || value?.announcementType || value?.type;
-  return String(nestedValue || '').trim().toUpperCase();
+export function getAnnouncementStage(code: string) {
+  return getStatusLabel(STAGE_STATUS[code as StageCode] ?? code);
 }
-
-export function getAnnouncementStage(value: string | Record<string, unknown> | null | undefined) {
-  const code = getCode(value);
-  const stageCode = getStageCode(value);
-  return ANNOUNCEMENT_STAGE_LABELS[stageCode] || code || 'TOR Announcement';
+export function getStageCode(status?: string | null) {
+  return ANNOUNCEMENT_STAGE_CODES.find(code => STAGE_STATUS[code] === status) ?? '';
 }
-
-export function getStageCode(announcementType: string | Record<string, unknown> | null | undefined, status?: string | null) {
-  const code = getCode(announcementType);
-  if (ANNOUNCEMENT_STAGE_CODES.includes(code)) {
-    return code;
-  }
-  if (code.includes('ประกาศเชิญชวน')) {
-    return 'D0';
-  }
-  if (code.includes('ยกเลิก')) {
-    return 'D1';
-  }
-  return status || 'open';
+export function getStatusLabel(status?: string | null) {
+  return LABELS[status ?? 'unknown'] ?? status ?? LABELS.unknown;
 }
-
-export function getStatusKey(status: string | null | undefined, announcementType?: string | Record<string, unknown> | null) {
-  const normalized = status || '';
-  if (normalized === 'Open for Bidding') return 'open';
-  if (normalized === 'Closed') return 'closed';
-  if (normalized === 'Under AI Review' || normalized === 'Matched') return normalized;
-  if (STATUS_LABELS[normalized]) return normalized;
-  const code = getStageCode(announcementType, status);
-  if (['D1', 'W1'].includes(code)) return 'cancelled';
-  if (['W0', 'W2'].includes(code)) return 'awarded';
-  return 'open';
+export function getLatestStageCodes(project: TORContract): StageCode[] {
+  const observations = project.stageObservations ?? {};
+  const latestDate = project.statusPublishedAt ?? Object.values(observations)
+    .map(observation => observation?.publishedAt ?? '').sort().at(-1);
+  const codes = latestDate ? ANNOUNCEMENT_STAGE_CODES.filter(code => observations[code]?.publishedAt === latestDate) : [];
+  const statusCode = getStageCode(project.status) as StageCode;
+  return codes.length ? codes : statusCode ? [statusCode] : [];
 }
-
-export function getStatusLabel(status: string | null | undefined, announcementType?: string | Record<string, unknown> | null) {
-  const stageCode = getStageCode(announcementType, status);
-  if (ANNOUNCEMENT_STAGE_LABELS[stageCode]) {
-    return ANNOUNCEMENT_STAGE_LABELS[stageCode];
-  }
-  if (stageCode.includes('ประกาศเชิญชวน')) {
-    return ANNOUNCEMENT_STAGE_LABELS.D0;
-  }
-  if (stageCode.includes('ยกเลิก')) {
-    return ANNOUNCEMENT_STAGE_LABELS.D1;
-  }
-  const key = getStatusKey(status, announcementType);
-  return STATUS_LABELS[key] || key;
+export function matchesStage(project: TORContract, stage: string) {
+  if (stage === 'multiple_announcements_same_day') return project.statusOrderAmbiguous === true;
+  return getLatestStageCodes(project).includes(stage as StageCode);
 }
-
-export function getStatusClasses(status: string | null | undefined, announcementType?: string | Record<string, unknown> | null) {
-  const stageCode = getStageCode(announcementType, status);
-  if (stageCode === 'P0' || stageCode === '15' || stageCode === 'B0') {
-    return 'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800';
-  }
-  if (stageCode === 'D0' || stageCode === 'D2') {
-    return 'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800';
-  }
-  if (stageCode === 'D1' || stageCode === 'W1') {
-    return 'bg-rose-100 text-rose-700 border-rose-200 dark:bg-rose-950/50 dark:text-rose-300 dark:border-rose-800';
-  }
-  if (stageCode === 'W0' || stageCode === 'W2') {
-    return 'bg-sky-100 text-sky-700 border-sky-200 dark:bg-sky-950/50 dark:text-sky-300 dark:border-sky-800';
-  }
-
-  switch (getStatusKey(status, announcementType)) {
-    case 'open':
-      return 'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800';
-    case 'awarded':
-      return 'bg-sky-100 text-sky-700 border-sky-200 dark:bg-sky-950/50 dark:text-sky-300 dark:border-sky-800';
-    case 'cancelled':
-      return 'bg-rose-100 text-rose-700 border-rose-200 dark:bg-rose-950/50 dark:text-rose-300 dark:border-rose-800';
-    case 'closed':
-      return 'bg-slate-200 text-slate-700 border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700';
-    case 'draft':
-      return 'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800';
-    case 'Under AI Review':
-      return 'bg-violet-100 text-violet-700 border-violet-200 dark:bg-violet-950/50 dark:text-violet-300 dark:border-violet-800';
-    case 'Matched':
-      return 'bg-indigo-100 text-indigo-700 border-indigo-200 dark:bg-indigo-950/50 dark:text-indigo-300 dark:border-indigo-800';
-    default:
-      return 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700';
-  }
+export function getStatusClasses(status?: string | null) {
+  const code = getStageCode(status);
+  const color = ['D1', 'W1'].includes(code) ? 'rose' : ['W0', 'W2'].includes(code) ? 'sky'
+    : ['D0', 'D2'].includes(code) ? 'emerald' : ['P0', '15', 'B0'].includes(code) ? 'amber' : 'slate';
+  const classes: Record<string, string> = {
+    rose: 'bg-rose-100 text-rose-700 border-rose-200 dark:bg-rose-950/50 dark:text-rose-300 dark:border-rose-800',
+    sky: 'bg-sky-100 text-sky-700 border-sky-200 dark:bg-sky-950/50 dark:text-sky-300 dark:border-sky-800',
+    emerald: 'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800',
+    amber: 'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800',
+    slate: 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'
+  };
+  return classes[color];
 }

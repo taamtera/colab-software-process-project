@@ -1,4 +1,6 @@
 'use client';
+import { useLanguage } from '@/lib/LanguageProvider';
+
 
 import React, { useState } from 'react';
 import { SoftwareHouseProfile } from '@/types';
@@ -25,6 +27,7 @@ export const SoftwareHouseProfileModal: React.FC<ProfileModalProps> = ({
   currentUser,
   onSave
 }) => {
+  const { t } = useLanguage();
   const [profile, setProfile] = useState<SoftwareHouseProfile>({ ...currentUser });
   const [newProperty, setNewProperty] = useState('');
   const [newTech, setNewTech] = useState('');
@@ -89,12 +92,9 @@ export const SoftwareHouseProfileModal: React.FC<ProfileModalProps> = ({
             className="w-14 h-14 rounded-2xl object-cover ring-2 ring-sky-500/50"
           />
           <div>
-            <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-              Desktop - data <span className="text-slate-500 dark:text-slate-400 text-lg font-normal">(Software House Profile)</span>
+            <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">{t("Company profile")} <span className="text-slate-500 dark:text-slate-400 text-lg font-normal">{t("Software house profile")}</span>
             </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              จัดการข้อมูลศักยภาพบริษัทและคุณสมบัติเพื่อจับคู่กับ TOR สัญญาจ้าง (FR10 - FR12)
-            </p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">{t("Manage company capabilities and qualifications for matching TOR projects.")} </p>
           </div>
         </div>
 
@@ -104,9 +104,7 @@ export const SoftwareHouseProfileModal: React.FC<ProfileModalProps> = ({
           {/* General Company Information */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                ชื่อบริษัท Software House
-              </label>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">{t("Software company name")} </label>
               <input
                 type="text"
                 required
@@ -117,9 +115,7 @@ export const SoftwareHouseProfileModal: React.FC<ProfileModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                เขตพื้นที่ทำการในกรุงเทพฯ
-              </label>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">{t("Office location")} </label>
               <select
                 value={profile.district}
                 onChange={(e) => setProfile({ ...profile, district: e.target.value })}
@@ -132,9 +128,7 @@ export const SoftwareHouseProfileModal: React.FC<ProfileModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                ขนาดองค์กร (Company Size)
-              </label>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">{t("Company Size")} </label>
               <input
                 type="text"
                 value={profile.companySize}
@@ -144,9 +138,7 @@ export const SoftwareHouseProfileModal: React.FC<ProfileModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                อีเมลติดต่อหลัก
-              </label>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">{t("Primary contact email")} </label>
               <input
                 type="email"
                 value={profile.email}
@@ -161,11 +153,10 @@ export const SoftwareHouseProfileModal: React.FC<ProfileModalProps> = ({
             <div className="flex items-center justify-between">
               <h3 className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
                 <ShieldCheck className="w-4 h-4" />
-                <span>รายการคุณสมบัติบริษัท (property list)</span>
+                <span>{t("property list")}</span>
               </h3>
               <span className="text-[11px] text-slate-500 dark:text-slate-400 font-mono">
-                {profile.properties.length} Active Items
-              </span>
+                {profile.properties.length}{t("Active Items")} </span>
             </div>
 
             {/* List of active properties */}
@@ -196,7 +187,7 @@ export const SoftwareHouseProfileModal: React.FC<ProfileModalProps> = ({
                 type="text"
                 value={newProperty}
                 onChange={(e) => setNewProperty(e.target.value)}
-                placeholder="เพิ่มคุณสมบัติใหม่ เช่น ได้รับมาตรฐาน ISO 27001 หรือ ผลงานประเภท GIS"
+                placeholder={t("Add a qualification, such as ISO 27001 or GIS experience")}
                 className="flex-1 px-4 py-2 theme-input rounded-xl text-xs placeholder-slate-400"
               />
               <button
@@ -205,16 +196,14 @@ export const SoftwareHouseProfileModal: React.FC<ProfileModalProps> = ({
                 className="px-3 py-2 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl text-xs flex items-center gap-1 transition-all shadow-sm shrink-0"
               >
                 <Plus className="w-4 h-4" />
-                <span>เพิ่ม (Add property)</span>
+                <span>{t("Add property")}</span>
               </button>
             </div>
           </div>
 
           {/* Section: Technologies */}
           <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2">
-              เทคโนโลยีที่เชี่ยวชาญ (Tech Stack Tags)
-            </label>
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2">{t("Technology expertise")} </label>
             <div className="flex flex-wrap gap-2 mb-2">
               {profile.technologies.map((tech, idx) => (
                 <span key={idx} className="px-3 py-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-medium rounded-lg border border-slate-200 dark:border-slate-700">
@@ -227,16 +216,14 @@ export const SoftwareHouseProfileModal: React.FC<ProfileModalProps> = ({
                 type="text"
                 value={newTech}
                 onChange={(e) => setNewTech(e.target.value)}
-                placeholder="เช่น Docker, PostgreSQL, Flutter..."
+                placeholder={t("For example: Docker, PostgreSQL, Flutter...")}
                 className="flex-1 px-4 py-2 theme-input rounded-xl text-xs placeholder-slate-400"
               />
               <button
                 type="button"
                 onClick={handleAddTech}
                 className="px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-semibold transition-all shrink-0 border border-slate-200 dark:border-slate-700"
-              >
-                + เพิ่ม Tech
-              </button>
+              >{t("+ Add technology")} </button>
             </div>
           </div>
 
@@ -244,7 +231,7 @@ export const SoftwareHouseProfileModal: React.FC<ProfileModalProps> = ({
           {savedSuccess && (
             <div className="p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-600 dark:text-slate-300 flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-slate-500 shrink-0" />
-              <span>บันทึกข้อมูลคุณสมบัติเรียบร้อยแล้ว! Vertex AI กำลังคำนวณการจับคู่ TOR ใหม่...</span>
+              <span>{t("Profile saved successfully.")}</span>
             </div>
           )}
 
@@ -254,15 +241,13 @@ export const SoftwareHouseProfileModal: React.FC<ProfileModalProps> = ({
               type="button"
               onClick={onClose}
               className="px-5 py-2.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 transition-colors"
-            >
-              ยกเลิก
-            </button>
+            >{t("Cancel")} </button>
             <button
               type="submit"
               className="px-6 py-2.5 rounded-xl text-xs font-bold text-white bg-sky-600 hover:bg-sky-700 shadow-sm flex items-center gap-2 transition-all"
             >
               <Save className="w-4 h-4" />
-              <span>บันทึกโปรไฟล์คุณสมบัติ (Save Desktop - data)</span>
+              <span>{t("Save Profile")}</span>
             </button>
           </div>
 

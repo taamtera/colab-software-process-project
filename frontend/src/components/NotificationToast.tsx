@@ -1,4 +1,6 @@
 'use client';
+import { useLanguage } from '@/lib/LanguageProvider';
+
 
 import React from 'react';
 import { X, BellRing, ArrowRight } from 'lucide-react';
@@ -15,6 +17,7 @@ export const NotificationToast: React.FC<NotificationToastProps> = ({
   onClose,
   onViewContract
 }) => {
+  const { t } = useLanguage();
   if (!contract) return null;
 
   return (
@@ -27,9 +30,9 @@ export const NotificationToast: React.FC<NotificationToastProps> = ({
 
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-xs font-bold text-sky-700 dark:text-sky-300">พบสัญญา TOR ตรงคุณสมบัติ!</span>
+            <span className="text-xs font-bold text-sky-700 dark:text-sky-300">{t("A matching TOR project was found!")}</span>
             <span className="px-1.5 py-0.2 rounded text-[10px] font-extrabold bg-sky-600 text-white">
-              {contract.matchedScore}% Match
+              {contract.matchedScore}% {t("Match")}
             </span>
           </div>
           
@@ -37,8 +40,7 @@ export const NotificationToast: React.FC<NotificationToastProps> = ({
             {contract.title}
           </h4>
 
-          <p className="text-[11px] text-slate-600 dark:text-slate-300 mb-2">
-            วงเงิน: <strong className="text-sky-700 dark:text-sky-300">{contract.priceFormatted.replaceAll("0","X")}</strong> • {contract.category}
+          <p className="text-[11px] text-slate-600 dark:text-slate-300 mb-2">{t("Budget:")} <strong className="text-sky-700 dark:text-sky-300">{t(contract.priceFormatted)}</strong> • {contract.category}
           </p>
 
           <button
@@ -48,7 +50,7 @@ export const NotificationToast: React.FC<NotificationToastProps> = ({
             }}
             className="text-xs font-bold text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 flex items-center gap-1 transition-colors"
           >
-            <span>ดูรายละเอียดสัญญา TOR</span>
+            <span>{t("View TOR project details")}</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>

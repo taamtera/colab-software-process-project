@@ -14,6 +14,11 @@ const requiredFiles = [
   'scripts/check-connection.mjs',
   'scripts/setup-database.mjs',
   'scripts/verify-database.mjs',
+  'scripts/ingestion-schema.mjs',
+  'scripts/project-migration.mjs',
+  'scripts/migrate-project-identity.mjs',
+  'scripts/verify-enrichment-removed.mjs',
+  'tests/project-migration.test.mjs',
 ];
 
 const errors = [];

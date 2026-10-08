@@ -1,4 +1,6 @@
 'use client';
+import { useLanguage } from '@/lib/LanguageProvider';
+
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { 
@@ -19,8 +21,7 @@ import { AuthModal } from '@/components/AuthModal';
 import { SoftwareHouseProfileModal } from '@/components/SoftwareHouseProfileModal';
 import { RecommendationView } from '@/components/RecommendationView';
 import { NotificationToast } from '@/components/NotificationToast';
-import { getStageCode } from '@/lib/torPresentation';
-import { getAnnouncementStage } from '@/lib/torPresentation';
+import { DEFAULT_FILTERS, dateRange } from '@/lib/discovery';
 import { resolveApiUrl } from '@/lib/api';
 import { 
   Sparkles, 
@@ -32,6 +33,7 @@ import {
 } from 'lucide-react';
 
 export default function Home() {
+  const { t } = useLanguage();
   // Theme state ('light' by default for easy on the eyes, or toggleable to 'dark')
   const [themeMode, setThemeMode] = useState<'light' | 'dark'>('light');
 
@@ -50,34 +52,59 @@ export default function Home() {
   };
 
   // State Management
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'find' | 'recommendations' | 'profile'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'find' | 'recommendations' | 'profile'>('find');
   const [currentUser, setCurrentUser] = useState<SoftwareHouseProfile | null>(null);
   const [contracts, setContracts] = useState<TORContract[]>([]);
   const [isLoadingTors, setIsLoadingTors] = useState(true);
   const [torLoadError, setTorLoadError] = useState<string | null>(null);
   const [torRefreshKey, setTorRefreshKey] = useState(0);
 
+  const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [totalAll, setTotalAll] = useState(0);
+  const [facets, setFacets] = useState<torApi.DiscoveryFacets>({ departments: [], methods: [] });
   useEffect(() => {
-    let cancelled = false;
-    setIsLoadingTors(true);
-    setTorLoadError(null);
-
-    torApi
-      .listTors()
-      .then(({ items }) => {
-        if (!cancelled) setContracts(items);
-      })
-      .catch((error: Error) => {
-        if (!cancelled) setTorLoadError(error.message);
-      })
-      .finally(() => {
-        if (!cancelled) setIsLoadingTors(false);
-      });
-
-    return () => {
-      cancelled = true;
+    const timer = setTimeout(() => setDebouncedSearch(filters.searchQuery.trim().replace(/\s+/g, ' ')), 300);
+    return () => clearTimeout(timer);
+  }, [filters.searchQuery]);
+  const query = useMemo(() => ({ search: debouncedSearch, departmentId: filters.department,
+    stage: filters.status, stageScope: filters.stageScope, procurementMethod: filters.procurementMethod,
+    ...(filters.datePreset === 'custom' ? { fromDate: filters.fromDate, toDate: filters.toDate } : dateRange(filters.datePreset)),
+    sort: filters.sort }), [debouncedSearch, filters.department, filters.status, filters.stageScope,
+    filters.procurementMethod, filters.datePreset, filters.fromDate, filters.toDate, filters.sort]);
+  const queryKey = JSON.stringify(query);
+  const [pageQueryKey, setPageQueryKey] = useState(queryKey);
+  const effectivePage = pageQueryKey === queryKey ? page : 1;
+  useEffect(() => {
+    const controller = new AbortController();
+    let timer: ReturnType<typeof setTimeout>;
+    const refresh = async (initial = false) => {
+      if (initial) setIsLoadingTors(true);
+      try {
+        if (query.fromDate && query.toDate && query.fromDate > query.toDate) throw new Error('The start date must not be after the end date.');
+        const result = await torApi.listTors({ ...query, page: effectivePage }, controller.signal);
+        if (!controller.signal.aborted) {
+          setContracts(result.items); setTotal(result.total); setTotalAll(result.totalAllProjects);
+          setFacets(result.facets); setTorLoadError(null);
+          if (effectivePage > Math.max(1, result.pagination.totalPages)) {
+            setPage(Math.max(1, result.pagination.totalPages)); setPageQueryKey(queryKey);
+          }
+        }
+      } catch (error) {
+        if (!controller.signal.aborted) setTorLoadError((error as Error).message);
+      } finally {
+        if (!controller.signal.aborted) { setIsLoadingTors(false); timer = setTimeout(() => void refresh(), 30000); }
+      }
     };
-  }, [torRefreshKey]);
+    void refresh(true);
+    return () => { controller.abort(); clearTimeout(timer); };
+  }, [queryKey, effectivePage, torRefreshKey]);
+  const changePage = (value: number) => {
+    setPageQueryKey(queryKey); setPage(value);
+    document.getElementById('project-results')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   // Restore the session on load: if a valid auth cookie exists, the backend returns
   // the current user; otherwise stay logged out. Runs once on mount.
@@ -104,87 +131,16 @@ export default function Home() {
   // Profile Modal State
   const [profileModalOpen, setProfileModalOpen] = useState<boolean>(false);
 
-  // Filter State
-  const [filters, setFilters] = useState<FilterState>({
-    searchQuery: '',
-    department: 'All Departments',
-    minPrice: 0,
-    maxPrice: 50000000,
-    minMatchScore: 0,
-    status: 'All'
-  });
-
-  // Crawler & Notification state
-  const [isCrawling, setIsCrawling] = useState<boolean>(false);
   const [activeNotification, setActiveNotification] = useState<TORContract | null>(null);
-  const [notificationCount, setNotificationCount] = useState<number>(1);
-
-  // Recalculate contract match scores whenever currentUser properties change
-  useEffect(() => {
-    if (!currentUser) return;
-
-    setContracts(prevContracts => 
-      prevContracts.map(contract => {
-        let matchedCount = 0;
-        contract.properties.forEach(prop => {
-          if (currentUser.properties.some(up => 
-            up.toLowerCase().includes(prop.property.toLowerCase()) || 
-            prop.property.toLowerCase().includes(up.toLowerCase())
-          )) {
-            matchedCount++;
-          }
-        });
-
-        const totalProps = contract.properties.length || 1;
-        const calcScore = Math.min(99, Math.max(45, Math.round((matchedCount / totalProps) * 100)));
-
-        return {
-          ...contract,
-          matchedScore: calcScore
-        };
-      })
-    );
-  }, [currentUser]);
-
-  // Filtered TOR Contracts
-  const filteredContracts = useMemo(() => {
-    return contracts.filter(contract => {
-      if (filters.searchQuery) {
-        const query = filters.searchQuery.toLowerCase();
-        const matchesTitle = contract.title.toLowerCase().includes(query);
-        const matchesOwner = contract.contractOwner.toLowerCase().includes(query);
-        const matchesDepartmentId = (contract.departmentId || '').toLowerCase().includes(query);
-        const matchesDepartmentName = (contract.departmentName || '').toLowerCase().includes(query);
-        const matchesDesc = contract.description.toLowerCase().includes(query);
-        const matchesProps = contract.properties.some(p => p.property.toLowerCase().includes(query));
-        const matchesStage = getAnnouncementStage(contract.announcementType).toLowerCase().includes(query);
-        if (!matchesTitle && !matchesOwner && !matchesDepartmentId && !matchesDepartmentName && !matchesDesc && !matchesProps && !matchesStage) return false;
-      }
-
-      if (filters.department !== 'All Departments' && contract.departmentId !== filters.department) {
-        return false;
-      }
-
-      if (filters.status !== 'All' && getStageCode(contract.announcementType, contract.status) !== filters.status) {
-        return false;
-      }
-
-      if (filters.maxPrice > 0 && contract.price > filters.maxPrice) {
-        return false;
-      }
-
-      if (filters.minMatchScore > 0 && (contract.matchedScore || 0) < filters.minMatchScore) {
-        return false;
-      }
-
-      return true;
-    });
-  }, [contracts, filters]);
+  const [notificationCount] = useState<number>(0);
+  const filteredContracts = contracts;
 
   // Total budget volume formatted
   const totalBudgetFormatted = useMemo(() => {
-    const total = contracts.reduce((acc, curr) => acc + curr.price, 0);
-    return `${(total / 1000000).toFixed(1)}M THB`;
+    const knownBudgets = contracts.filter(project => project.price !== null);
+    if (!knownBudgets.length) return t("Not available");
+    const total = knownBudgets.reduce((acc, project) => acc + (project.price ?? 0), 0);
+    return `${(total / 1000000).toFixed(1)}M THB${knownBudgets.length < contracts.length ? ' (known budgets)' : ''}`;
   }, [contracts]);
 
   // Handlers
@@ -204,30 +160,11 @@ export default function Home() {
     }
   };
 
-  const handleResetFilters = () => {
-    setFilters({
-      searchQuery: '',
-      department: 'All Departments',
-      minPrice: 0,
-      maxPrice: 50000000,
-      minMatchScore: 0,
-      status: 'All'
-    });
-  };
-
-  const handleTriggerAICrawl = () => {
-    setIsCrawling(true);
-    setTimeout(() => {
-      setIsCrawling(false);
-      if (contracts.length > 0) {
-        setActiveNotification(contracts[0]);
-      }
-    }, 2000);
-  };
+  const handleResetFilters = () => setFilters({ ...DEFAULT_FILTERS });
 
   const handleDownloadPDF = (contract: TORContract) => {
-    if (contract.templateId && (contract.documentUrl || contract.url)) {
-      const downloadUrl = resolveApiUrl(`/api/tors/documents/${encodeURIComponent(contract.templateId)}/download`);
+    if (contract.projectId && (contract.documentUrl || contract.url)) {
+      const downloadUrl = resolveApiUrl(`/api/tors/documents/${encodeURIComponent(contract.projectId)}/download`);
       if (downloadUrl) window.location.assign(downloadUrl);
       return;
     }
@@ -239,28 +176,27 @@ export default function Home() {
     }
 
     const textContent = `
-============================================================
-ข้อกำหนดรายละเอียดและขอบเขตของงาน (TOR)
+${t('Terms of Reference (TOR)')}
 ${contract.title}
-============================================================
-ผู้ออกเอกสาร: ${contract.contractOwner}
-หมวดหมู่: ${contract.category}
-วงเงินงบประมาณ: ${contract.priceFormatted}
-ระยะเวลาสัญญา: ${contract.startDate} ถึง ${contract.endDate}
-กำหนดวันยื่นเอกสาร: ${contract.submissionDeadline}
 
-วัตถุประสงค์:
+${t('Issued by:')} ${contract.contractOwner}
+${t('Procurement Method')} ${contract.category}
+${t('Project budget:')} ${t(contract.priceFormatted)}
+${t('Contract period:')} ${contract.startDate} – ${contract.endDate}
+${t('Submission deadline:')} ${t(contract.submissionDeadline)}
+
+${t('Purpose:')}
 ${contract.description}
 
-คุณสมบัติของผู้เสนอราคา (Vertex AI Evaluated):
-${contract.properties.map((p, i) => `${i + 1}. ${p.property}`).join('\n')}
+${t('Qualifications:')}
+${contract.properties.map(p => '- ' + p.property).join('\n')}
 
-วิเคราะห์โดย Vertex AI:
-- คะแนนความเหมาะสม: ${contract.aiEvaluation.qualificationMatchScore}%
-- ประเมินงบประมาณ: ${contract.aiEvaluation.priceAssessment}
-- ระดับความเสี่ยง: ${contract.aiEvaluation.riskLevel} (${contract.aiEvaluation.riskAnalysis})
+${t('Assessment:')}
+${t('Score:')} ${contract.aiEvaluation.qualificationMatchScore}%
+${t('Budget assessment:')} ${t(contract.aiEvaluation.priceAssessment)}
+${t('Risk')}: ${t(contract.aiEvaluation.riskLevel)} (${t(contract.aiEvaluation.riskAnalysis)})
 
-ดาวน์โหลดจาก Bangkok TOR Intelligence Platform (2026)
+${t('Downloaded from Thailand TOR Intelligence Platform (2026)')}
     `.trim();
 
     const blob = new Blob([textContent], { type: 'text/plain;charset=utf-8' });
@@ -299,7 +235,7 @@ ${contract.properties.map((p, i) => `${i + 1}. ${p.property}`).join('\n')}
             
             {/* Banner Section (Dash board) */}
             <DashboardHero
-              totalTORs={contracts.length}
+              totalTORs={totalAll}
               totalBudgetFormatted={totalBudgetFormatted}
             />
 
@@ -318,39 +254,43 @@ ${contract.properties.map((p, i) => `${i + 1}. ${p.property}`).join('\n')}
               filters={filters}
               setFilters={setFilters}
               onResetFilters={handleResetFilters}
-              resultCount={filteredContracts.length}
-              onTriggerAICrawl={handleTriggerAICrawl}
-              isCrawling={isCrawling}
+              resultCount={total}
+              departments={facets.departments}
+              methods={facets.methods}
+              onRefresh={() => setTorRefreshKey(key => key + 1)}
+              isLoading={isLoadingTors}
             />
 
             {/* TOR Contract Cards Listing */}
             <div>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
-                  <Layers className="w-5 h-5 text-sky-600 dark:text-sky-400" />
-                  <span>รายการสัญญา TOR ทั้งหมดในกรุงเทพฯ ({filteredContracts.length})</span>
-                </h2>
-                <span className="text-xs text-slate-500 dark:text-slate-400">
-                  คลิกที่การ์ดเพื่อเปิด <strong className="text-sky-600 dark:text-sky-400">Desktop - 2 (PDF Reader)</strong>
-                </span>
+              <div id="project-results" className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 scroll-mt-24">
+                <div>
+                  <h2 className="text-xl font-bold flex items-center gap-2"><Layers className="w-5 h-5 text-sky-600" />{t("Nationwide Projects")}</h2>
+                  <p className="text-sm text-slate-500 mt-1">{total.toLocaleString()}{t("items · Select a project to view announcements and documents")}</p>
+                </div>
+                <label className="text-sm flex items-center gap-2 font-medium text-slate-700 dark:text-slate-300">{t("Sort by:")} <select aria-label={t("Sort by")} className="theme-input rounded-lg p-2" value={filters.sort}
+                    onChange={e => setFilters(prev => ({ ...prev, sort: e.target.value as FilterState['sort'] }))}>
+                    <option value="latest">{t("Latest Date")}</option>
+                    <option value="oldest">{t("Oldest Date")}</option>
+                    <option value="relevance" disabled={!filters.searchQuery.trim()}>{t("Relevance")}</option>
+                  </select>
+                </label>
               </div>
 
               {isLoadingTors ? (
                 <div className="theme-card p-10 text-center rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
                   <RefreshCw className="w-8 h-8 text-sky-600 animate-spin mx-auto mb-3" />
-                  <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">Loading live TOR announcements...</p>
+                  <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">{t("Loading live TOR announcements...")}</p>
                 </div>
               ) : torLoadError ? (
                 <div className="theme-card p-8 text-center rounded-lg border border-rose-200 dark:border-rose-900/60 bg-white dark:bg-slate-900">
-                  <p className="text-sm font-semibold text-rose-700 dark:text-rose-300">Could not load live TOR announcements.</p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">{torLoadError}</p>
+                  <p className="text-sm font-semibold text-rose-700 dark:text-rose-300">{t("Could not load live TOR announcements.")}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">{t(torLoadError)}</p>
                   <button
                     onClick={() => setTorRefreshKey((key) => key + 1)}
                     className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900 text-xs font-semibold rounded-lg"
                   >
-                    <RefreshCw className="w-3.5 h-3.5" />
-                    Retry
-                  </button>
+                    <RefreshCw className="w-3.5 h-3.5" />{t("Retry")} </button>
                 </div>
               ) : filteredContracts.length > 0 ? (
                 <div className="space-y-4">
@@ -365,15 +305,23 @@ ${contract.properties.map((p, i) => `${i + 1}. ${p.property}`).join('\n')}
               ) : (
                 <div className="theme-card p-8 text-center rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
                   <Search className="w-12 h-12 text-slate-400 mx-auto mb-3" />
-                  <h3 className="text-lg font-bold text-slate-700 dark:text-slate-300">ไม่พบรายการ TOR ที่ตรงกับตัวกรอง</h3>
-                  <p className="text-xs text-slate-500 mt-1 mb-4">ลองปรับลดเงื่อนไข หรือกดล้างตัวกรองเพื่อดูรายการทั้งหมด</p>
+                  <h3 className="text-lg font-bold text-slate-700 dark:text-slate-300">{t("No matching TOR projects found")}</h3>
+                  <p className="text-xs text-slate-500 mt-1 mb-4">{t("Try adjusting criteria or clear all filters")}</p>
                   <button
                     onClick={handleResetFilters}
                     className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-sky-600 dark:text-sky-400 text-xs font-semibold rounded-xl transition-all"
-                  >
-                    ล้างตัวกรองทั้งหมด
-                  </button>
+                  >{t("Clear All Filters")} </button>
                 </div>
+              )}
+              {!isLoadingTors && !torLoadError && total > 0 && (
+                <nav aria-label={t("Search result pages")} className="flex flex-wrap items-center justify-between gap-3 mt-6 text-sm">
+                  <span className="text-slate-500">{(effectivePage - 1) * 25 + 1}–{Math.min(effectivePage * 25, total)}{t("of")} {total.toLocaleString()}{t("items")}</span>
+                  <div className="flex items-center gap-3">
+                    <button className="theme-input rounded-lg px-3 py-2 disabled:opacity-40" disabled={effectivePage === 1} onClick={() => changePage(effectivePage - 1)}>{t("Previous")}</button>
+                    <span>{effectivePage} / {Math.max(1, Math.ceil(total / 25))}</span>
+                    <button className="theme-input rounded-lg px-3 py-2 disabled:opacity-40" disabled={effectivePage >= Math.ceil(total / 25)} onClick={() => changePage(effectivePage + 1)}>{t("Next")}</button>
+                  </div>
+                </nav>
               )}
             </div>
 
@@ -395,16 +343,12 @@ ${contract.properties.map((p, i) => `${i + 1}. ${p.property}`).join('\n')}
           ) : (
             <div className="theme-card p-10 text-center rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 my-8 shadow-sm">
               <Bot className="w-16 h-16 text-sky-600 dark:text-sky-400 mx-auto mb-4" />
-              <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white">เข้าสู่ระบบเพื่อเปิดใช้งาน AI Recommendation</h2>
-              <p className="text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto mt-2 mb-6">
-                ลงทะเบียนหรือเข้าสู่ระบบบัญชี Software House เพื่อวิเคราะห์คุณสมบัติบริษัทและรับคำแนะนำ TOR แบบเฉพาะบุคคล
-              </p>
+              <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white">{t("Log in to view AI recommendations")}</h2>
+              <p className="text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto mt-2 mb-6">{t("Create an account or log in to assess your company qualifications and receive personalized TOR recommendations.")} </p>
               <button
                 onClick={() => handleOpenAuth('login')}
                 className="px-6 py-3 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl shadow-sm text-sm transition-all"
-              >
-                log in / sign in เข้าสู่ระบบ
-              </button>
+              >{t("Log In / Sign Up")} </button>
             </div>
           )
         )}
@@ -418,21 +362,17 @@ ${contract.properties.map((p, i) => `${i + 1}. ${p.property}`).join('\n')}
                   <img src={currentUser.avatar} alt={currentUser.companyName} className="w-16 h-16 rounded-2xl object-cover ring-2 ring-sky-500/50" />
                   <div>
                     <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white">{currentUser.companyName}</h2>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">Tax ID: {currentUser.taxId} • {currentUser.district}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{t("Tax ID:")} {currentUser.taxId} • {currentUser.district}</p>
                   </div>
                 </div>
                 <button
                   onClick={() => setProfileModalOpen(true)}
                   className="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl text-xs shadow-sm"
-                >
-                  แก้ไขข้อมูลคุณสมบัติ (Edit Desktop - data)
-                </button>
+                >{t("Edit qualifications")} </button>
               </div>
 
               <div>
-                <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-3">
-                  คุณสมบัติที่ได้รับการรับรอง (property list)
-                </h3>
+                <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-3">{t("Verified qualifications")} </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {currentUser.properties.map((prop, idx) => (
                     <div key={idx} className="p-3 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 text-xs text-slate-800 dark:text-slate-200 flex items-center gap-2">
@@ -445,9 +385,7 @@ ${contract.properties.map((p, i) => `${i + 1}. ${p.property}`).join('\n')}
             </div>
           ) : (
             <div className="text-center py-16">
-              <button onClick={() => handleOpenAuth('login')} className="px-6 py-3 bg-sky-600 text-white font-bold rounded-xl">
-                Log In / Sign In
-              </button>
+              <button onClick={() => handleOpenAuth('login')} className="px-6 py-3 bg-sky-600 text-white font-bold rounded-xl">{t("Log In / Sign Up")} </button>
             </div>
           )
         )}
@@ -459,15 +397,15 @@ ${contract.properties.map((p, i) => `${i + 1}. ${p.property}`).join('\n')}
         <div className="max-w-7xl mx-auto px-4 text-center flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-sky-600 dark:text-sky-400" />
-            <span className="font-semibold text-slate-700 dark:text-slate-300">Bangkok TOR Intelligence Software Platform</span>
+            <span className="font-semibold text-slate-700 dark:text-slate-300">{t("Thailand TOR Intelligence Software Platform")}</span>
           </div>
-          <p>© 2026 Software Requirement Specification & Technical Design Mockup.</p>
+          <p>{t("© 2026 Software Requirement Specification & Technical Design Mockup.")}</p>
         </div>
       </footer>
 
       {/* MODAL 1: TOR Detail & PDF Reader (Desktop - 2) */}
       <TORDetailModal
-        contract={selectedContract}
+        contract={contracts.find(project => project.projectId === selectedContract?.projectId) ?? selectedContract}
         onClose={() => setSelectedContract(null)}
         onDownloadPDF={handleDownloadPDF}
       />
